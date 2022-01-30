@@ -83,7 +83,7 @@ while True:
         if start_time < now < end_time - datetime.timedelta(seconds=10):
             target_price = get_target_price("KRW-DOGE", 0.5)            
             current_price = get_current_price("KRW-DOGE")
-            if now.minute % 30 == 0 and 0 <= now.second <= 5:                    
+            if now.minute % 10 == 0 and 0 <= now.second <= 5:                    
                     post_message(myToken, "#crypto", "\n")
                     post_message(myToken, "#crypto", str(now.replace(microsecond=0)))
                     post_message(myToken, "#crypto", "DOGE 현재가: " + str(current_price))
