@@ -93,8 +93,10 @@ while True:
             if target_price < current_price and current_price < predicted_close_price:
                 krw = get_balance("KRW")
                 if krw > 5000:
+                    post_message(myToken, "#crypto", "\n DOGE를 사려고 합니다.")
                     upbit.buy_market_order("KRW-DOGE", krw*0.9995)
         else:
+            post_message(myToken, "#crypto", "\n DOGE를 팔려고 합니다.")
             doge = get_balance("DOGE")
             if doge > 0.00008:
                 upbit.sell_market_order("KRW-DOGE", doge*0.9995)
