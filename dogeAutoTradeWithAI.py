@@ -1,9 +1,11 @@
 from ast import Str
 import time
+from turtle import pd
 import pyupbit
 import datetime
 import schedule
 import requests
+import pandas as pd
 from fbprophet import Prophet
 
 access = ""
@@ -85,10 +87,8 @@ while True:
             current_price = get_current_price("KRW-DOGE")
             if now.minute % 30 == 0 and 0 <= now.second <= 5:                    
                     post_message(myToken, "#crypto", "\n")
-                    post_message(myToken, "#crypto", str(now.replace(microsecond=0)))
-                    post_message(myToken, "#crypto", "DOGE 현재가: " + str(current_price))
-                    post_message(myToken, "#crypto", "DOGE 매수가: " + str(target_price))
-                    post_message(myToken, "#crypto", "DOGE AI 종가: " + str(round(predicted_close_price,1)))
+                    dogePrice=pd.DataFrame([["DOGE 현재가: " + str(current_price)],["DOGE 매수가: " + str(target_price)],["DOGE AI 종가: " + str(round(predicted_close_price,1))]],columns = [now.replace(microsecond=0)])
+                    post_message(myToken, "#crypto", dogePrice.to_string(index=False))
                     time.sleep(5)            
             if target_price < current_price and current_price < predicted_close_price:
                 krw = get_balance("KRW")
