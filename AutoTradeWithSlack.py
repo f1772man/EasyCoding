@@ -47,8 +47,8 @@ def get_ma30min(ticker):
 
 def get_balance(ticker):
     """잔고 조회"""
-    Assets = upbit.get_balances()
-    for b in Assets:
+    balances = upbit.get_balances()
+    for b in balances:
         if b['currency'] == ticker:
             if b['balance'] is not None:
                 return float(b['balance'])
@@ -118,7 +118,7 @@ while True:
                     get_coin_info()                    
                     time.sleep(5)
                     
-            if now.minute % 5 == 0 and 0 <= now.second <= 1:
+            if now.minute % 5 == 0 and 0 <= now.second <= 5:
                     if ma30min < current_price:
                         post_message(myToken,"#crypto", "상승▲" + str(current_price) + ">" + str(round(ma30min,1)))
                     else:
@@ -129,9 +129,9 @@ while True:
                     buy_result = upbit.buy_market_order("KRW-DOGE", krw*0.9995)
                     post_message(myToken,"#crypto", "DOGE buy : " +str(buy_result))
         else:
-            btc = get_balance("DOGE")
-            if btc > 0.00008:
-                sell_result = upbit.sell_market_order("KRW-DOGE", btc*0.9995)
+            doge = get_balance("DOGE")
+            if doge > 0.00008:
+                sell_result = upbit.sell_market_order("KRW-DOGE", doge*0.9995)
                 post_message(myToken,"#crypto", "DOGE buy : " +str(sell_result))
         time.sleep(1)
     except Exception as e:
