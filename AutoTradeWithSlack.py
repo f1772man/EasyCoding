@@ -112,7 +112,7 @@ while True:
             ma15 = get_ma15("KRW-DOGE")
             ma30min = get_ma30min("KRW-DOGE")
             current_price = get_current_price("KRW-DOGE")
-            if now.minute % 30 == 0 and 0 <= now.second <= 5:
+            if now.minute % 10 == 0 and 0 <= now.second <= 5:
                     dogePrice=pd.DataFrame([["DOGE 현재가: " + str(current_price)],["DOGE 매수가: " + str(target_price)]],columns = [now.replace(microsecond=0)])
                     post_message(myToken, "#crypto", dogePrice.to_string(index=False))
                     get_coin_info()                    
