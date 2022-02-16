@@ -22,6 +22,14 @@ def post_message(token, channel, text):
         data={"channel": channel,"text": text}
     )
 
+def mrk_message(mrk):
+    try:
+        response = client.chat_postMessage(channel='#crypto', text=mrk)
+        print(response.status_code)
+    except SlackApiError as e:
+        print('Error: {}'.format(e.response['error']))        
+        return 0
+
 def get_target_price(ticker, k):
     """변동성 돌파 전략으로 매수 목표가 조회"""
     df = pyupbit.get_ohlcv(ticker, interval="day", count=2)
@@ -106,15 +114,24 @@ def get_coin_info(ticker):
 
     if ticker == 'ALL':
         mrkdwn_text = ""
-        for i in Assets.index:    
-            coinInfo = Assets.loc[i,['현재가', '수익율']]
-            mrkdwn_text = mrkdwn_text + "`" + str(Assets.loc[i,'코인']) + "`" + "\n```" + coinInfo.to_string() + "```\n"
-        try:
+        for i in Assets.index:
+            rates = get_coin_info(Assets.loc[i,'코인'])
+            min10_MA5 = get_ma10min("KRW-" + Assets.loc[i,'코인'], 5)
+            current_price = get_current_price("KRW-" + Assets.loc[i,'코인'])    
+            """ coinInfo = Assets.loc[i,['현재가', '수익율']]
+            mrkdwn_text = mrkdwn_text + "`" + str(Assets.loc[i,'코인']) + "`" + "\n```" + coinInfo.to_string() + "```\n" """
+            if min10_MA5 < current_price:
+                mrkdwn_text = mrkdwn_text + "`" + str(Assets.loc[i,'코인']) + "`" + "\n```" + "매수유지\n▲" + str(rates) + "%\n" + str(current_price) + "원" + " / " + str(min10_MA5) + "원" + "```\n"
+            else:
+                mrkdwn_text = mrkdwn_text + "`" + str(Assets.loc[i,'코인']) + "`" + "\n```" + "매도신호\n▼" + str(rates) + "%\n" + str(current_price) + "원" + " / " + str(min10_MA5) + "원" + "```\n"
+
+        mrk_message(mrkdwn_text)
+        """ try:
             response = client.chat_postMessage(channel='#crypto', text=mrkdwn_text)
             print(response.status_code)
         except SlackApiError as e:
             print('Error: {}'.format(e.response['error']))        
-        return 0
+        return 0 """
     else:
         for i in Assets.index:
             if Assets.loc[i, '코인'] == ticker:            
@@ -152,10 +169,11 @@ while True:
         now = datetime.datetime.now()
         start_time = get_start_time("KRW-DOGE")
         end_time = start_time + datetime.timedelta(days=1)
-        if now.minute % 30 == 0 and 0 <= now.second <= 5:
-            post_message(myToken,"#crypto", now.strftime("%H:%M %p"))
+        if now.minute % 5 == 0 and 0 <= now.second <= 5:            
+            mrk_message("```" + str(now.strftime("%H:%M %p")) + "```")
             get_coin_info('ALL')    
-            time.sleep(5)                
+            time.sleep(5)
+        mrkdwn_text = ""
         for coin in coins:
             if start_time < now < end_time - datetime.timedelta(seconds=10):    # 오늘 09:00 < 현재 < 익일 08:59:50                            
                 target_price = get_target_price("KRW-" + coin, 0.5)            
@@ -163,15 +181,15 @@ while True:
                 ma15 = get_ma15("KRW-" + coin)
                 ma30min = get_ma30min("KRW-" + coin)
 
-                if now.minute % 10 == 0 and 0 <= now.second <= 1:
+                """ if now.minute % 10 == 0 and 0 <= now.second <= 5:
                     rates = get_coin_info(coin)
                     min10_MA5 = get_ma10min("KRW-" + coin, 5)
                     if min10_MA5 < current_price:
-                        post_message(myToken,"#crypto", now.strftime("%H:%M %p"))
-                        post_message(myToken,"#crypto", str(coin) + "매수유지\n▲" + str(rates) + "%\n" + str(current_price) + "원" + " / " + str(min10_MA5) + "원")
+                        mrkdwn_text = mrkdwn_text + "`" + str(coin) + "`" + "\n```" + "매수유지\n▲" + str(rates) + "%\n" + str(current_price) + "원" + " / " + str(min10_MA5) + "원" + "```\n"                        
                     else:
-                        post_message(myToken,"#crypto", now.strftime("%H:%M %p"))
-                        post_message(myToken,"#crypto", str(coin) + "매도신호\n▼" + str(rates) + "%\n" + str(current_price) + "원" + " / " + str(min10_MA5) + "원")
+                        mrkdwn_text = mrkdwn_text + "`" + str(coin) + "`" + "\n```" + "매도신호\n▼" + str(rates) + "%\n" + str(current_price) + "원" + " / " + str(min10_MA5) + "원" + "```\n"
+                    mrk_message(mrkdwn_text)
+                    time.sleep(5) """
                 if target_price < current_price and ma15 < current_price:
                     krw = get_balance("KRW")
                     #post_message(myToken,"#crypto", coin + " 매수신호 ")
@@ -183,7 +201,7 @@ while True:
                 if coin > 0.00008:
                     sell_result = upbit.sell_market_order("KRW-" + coin, coin*0.9995)
                     post_message(myToken,"#crypto", coin + " buy : " +str(sell_result))
-            time.sleep(1)
+            time.sleep(1)        
     except Exception as e:
         print(e)
         post_message(myToken,"#crypto", e)
