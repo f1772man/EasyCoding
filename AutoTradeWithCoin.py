@@ -109,7 +109,6 @@ def get_coin_info(ticker):
         for i in Assets.index:    
             coinInfo = Assets.loc[i,['현재가', '수익율']]
             mrkdwn_text = mrkdwn_text + "`" + str(Assets.loc[i,'코인']) + "`" + "\n```" + coinInfo.to_string() + "```\n"
-
         try:
             response = client.chat_postMessage(channel='#crypto', text=mrkdwn_text)
             print(response.status_code)
@@ -158,14 +157,14 @@ while True:
             get_coin_info('ALL')    
             time.sleep(5)                
         for coin in coins:
-            if start_time < now < end_time - datetime.timedelta(seconds=10):    # 오늘 09:00 < 현재 < 익일 08:59:50            
-                rates = get_coin_info(coin)
+            if start_time < now < end_time - datetime.timedelta(seconds=10):    # 오늘 09:00 < 현재 < 익일 08:59:50                            
                 target_price = get_target_price("KRW-" + coin, 0.5)            
                 current_price = get_current_price("KRW-" + coin)
                 ma15 = get_ma15("KRW-" + coin)
                 ma30min = get_ma30min("KRW-" + coin)
 
-                if now.minute % 10 == 0 and 0 <= now.second <= 5:
+                if now.minute % 10 == 0 and 0 <= now.second <= 1:
+                    rates = get_coin_info(coin)
                     min10_MA5 = get_ma10min("KRW-" + coin, 5)
                     if min10_MA5 < current_price:
                         post_message(myToken,"#crypto", now.strftime("%H:%M %p"))
