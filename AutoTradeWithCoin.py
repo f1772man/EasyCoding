@@ -113,7 +113,7 @@ def get_coin_info(ticker):
     Assets.columns=['코인','잔고수량', '미체결 잔고수량','수량','현재가','수익율','매수가','평균가', '통화단위']
 
     if ticker == 'ALL':
-        mrkdwn_text = ""
+        mrkdwn_text = "\n>" + now.strftime("%H:%M %p") + "\n"        
         for i in Assets.index:
             rates = get_coin_info(Assets.loc[i,'코인'])
             min10_MA5 = get_ma10min("KRW-" + Assets.loc[i,'코인'], 5)
@@ -121,25 +121,27 @@ def get_coin_info(ticker):
             """ coinInfo = Assets.loc[i,['현재가', '수익율']]
             mrkdwn_text = mrkdwn_text + "`" + str(Assets.loc[i,'코인']) + "`" + "\n```" + coinInfo.to_string() + "```\n" """
             if min10_MA5 < current_price:
-                mrkdwn_text = mrkdwn_text + "`" + str(Assets.loc[i,'코인']) + "`" + "\n```" + "매수유지\n▲" + str(rates) + "%\n" + str(current_price) + "원" + " / " + str(min10_MA5) + "원" + "```\n"
+                mrkdwn_text = mrkdwn_text + "`" + str(Assets.loc[i,'코인']) + "`\n" + "```▲" + str(rates) + "%\n" + str(current_price)  + "원\n" + "10분봉 5MA: " + "매수```\n"
             else:
-                mrkdwn_text = mrkdwn_text + "`" + str(Assets.loc[i,'코인']) + "`" + "\n```" + "매도신호\n▼" + str(rates) + "%\n" + str(current_price) + "원" + " / " + str(min10_MA5) + "원" + "```\n"
+                mrkdwn_text = mrkdwn_text + "`" + str(Assets.loc[i,'코인']) + "`\n" + "```▼" + str(rates) + "%\n" + str(current_price)  + "원\n" + "10분봉 5MA: " + "매도```\n"
 
         mrk_message(mrkdwn_text)
+        time.sleep(5)
+        return 0
         """ try:
             response = client.chat_postMessage(channel='#crypto', text=mrkdwn_text)
             print(response.status_code)
         except SlackApiError as e:
             print('Error: {}'.format(e.response['error']))        
         return 0 """
-    else:
-        for i in Assets.index:
-            if Assets.loc[i, '코인'] == ticker:            
-                return round(Assets.loc[i, '수익율'],1)
+    
+    for i in Assets.index:
+        if Assets.loc[i, '코인'] == ticker:
+            return round(Assets.loc[i, '수익율'],1)
     return 0
 
-def get_movingaverage_trend(code, window):
-    """인자로 받은 종목에 대한 이동평균가격을 반환한다."""
+""" def get_movingaverage_trend(code, window):
+    #인자로 받은 종목에 대한 이동평균가격을 반환한다.
     try:
         #olhc = get
         time_now = datetime.now()
@@ -155,7 +157,7 @@ def get_movingaverage_trend(code, window):
     except Exception as ex:
         #dbgout('get_movingavrg(' + str(window) + ') -> exception! ' + str(ex))
         return None    
-
+ """
 # 로그인
 upbit = pyupbit.Upbit(access, secret)
 print("autotrade start")
@@ -169,11 +171,10 @@ while True:
         now = datetime.datetime.now()
         start_time = get_start_time("KRW-DOGE")
         end_time = start_time + datetime.timedelta(days=1)
-        if now.minute % 5 == 0 and 0 <= now.second <= 5:            
-            mrk_message("```" + str(now.strftime("%H:%M %p")) + "```")
+        if now.minute % 10 == 0 and 0 <= now.second <= 5:                        
             get_coin_info('ALL')    
             time.sleep(5)
-        mrkdwn_text = ""
+        #mrkdwn_text = ""
         for coin in coins:
             if start_time < now < end_time - datetime.timedelta(seconds=10):    # 오늘 09:00 < 현재 < 익일 08:59:50                            
                 target_price = get_target_price("KRW-" + coin, 0.5)            
