@@ -50,10 +50,13 @@ def get_ma30min(ticker):
 
 def get_ma10min(ticker,window):
     """10분봉 20이동 평균선 조회"""
-    df = pyupbit.get_ohlcv(ticker, interval="minute10", count=30)
-    #print(df.tail())
-    ma10min = df['close'].rolling(window).mean().iloc[-1]
-    #print(ma30min)
+    df = pyupbit.get_ohlcv(ticker, interval="minute10", count=10)    
+    #print(df)
+    ma10min = df['close'].rolling(window).mean()#.iloc[-1]
+    #print(ma10min)
+    df['10min5MA'] = ma10min
+    #df.to_excel("10min5MA.xlsx")
+    ma10min = ma10min.iloc[-1]
     return ma10min
 
 def get_balance(ticker):
@@ -151,7 +154,7 @@ while True:
         start_time = get_start_time("KRW-DOGE")
         end_time = start_time + datetime.timedelta(days=1)
         if now.minute % 30 == 0 and 0 <= now.second <= 5:
-            post_message(myToken,"#crypto", now.strftime("%H:%M","%p"))
+            post_message(myToken,"#crypto", now.strftime("%H:%M %p"))
             get_coin_info('ALL')    
             time.sleep(5)                
         for coin in coins:
@@ -161,15 +164,15 @@ while True:
                 current_price = get_current_price("KRW-" + coin)
                 ma15 = get_ma15("KRW-" + coin)
                 ma30min = get_ma30min("KRW-" + coin)
-                min10_MA5 = get_ma10min("KRW-" + coin, 5)                
-                             
+
                 if now.minute % 10 == 0 and 0 <= now.second <= 5:
-                        if min10_MA5 < current_price:
-                            post_message(myToken,"#crypto", now.strftime("%H:%M %p"))
-                            post_message(myToken,"#crypto", str(coin) + "매수유지\n▲" + str(rates) + "%\n" + str(current_price) + "원")
-                        else:
-                            post_message(myToken,"#crypto", now.strftime("%H:%M %p"))
-                            post_message(myToken,"#crypto", str(coin) + "매도신호\n▼" + str(rates) + "%\n" + str(current_price) + "원")
+                    min10_MA5 = get_ma10min("KRW-" + coin, 5)
+                    if min10_MA5 < current_price:
+                        post_message(myToken,"#crypto", now.strftime("%H:%M %p"))
+                        post_message(myToken,"#crypto", str(coin) + "매수유지\n▲" + str(rates) + "%\n" + str(current_price) + "원" + " / " + str(min10_MA5) + "원")
+                    else:
+                        post_message(myToken,"#crypto", now.strftime("%H:%M %p"))
+                        post_message(myToken,"#crypto", str(coin) + "매도신호\n▼" + str(rates) + "%\n" + str(current_price) + "원" + " / " + str(min10_MA5) + "원")
                 if target_price < current_price and ma15 < current_price:
                     krw = get_balance("KRW")
                     #post_message(myToken,"#crypto", coin + " 매수신호 ")
