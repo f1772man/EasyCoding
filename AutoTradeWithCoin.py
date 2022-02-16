@@ -54,7 +54,7 @@ def get_ma10min(ticker,window):
     #print(df.tail())
     ma10min = df['close'].rolling(window).mean().iloc[-1]
     #print(ma30min)
-    return ma30min
+    return ma10min
 
 def get_balance(ticker):
     """잔고 조회"""
@@ -165,14 +165,14 @@ while True:
                              
                 if now.minute % 10 == 0 and 0 <= now.second <= 1:
                         if min10_MA5 < current_price:
-                            post_message(myToken,"#crypto", now.strftime("%H:%M","%p"))
+                            post_message(myToken,"#crypto", now.strftime("%H:%M,%p"))
                             post_message(myToken,"#crypto", str(coin) + "매수유지\n▲" + str(rates) + "%\n" + str(current_price) + "원")
                         else:
                             post_message(myToken,"#crypto", now.strftime("%H:%M","%p"))
                             post_message(myToken,"#crypto", str(coin) + "매도신호\n▼" + str(rates) + "%\n" + str(current_price) + "원")
                 if target_price < current_price and ma15 < current_price:
                     krw = get_balance("KRW")
-                    post_message(myToken,"#crypto", coin + " 매수신호 ")
+                    i#post_message(myToken,"#crypto", coin + " 매수신호 ")
                     if krw > 5000:
                         buy_result = upbit.buy_market_order("KRW-" + coin, krw*0.9995)
                         post_message(myToken,"#crypto", coin + " buy : " +str(buy_result))
