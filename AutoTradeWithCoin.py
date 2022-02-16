@@ -60,7 +60,7 @@ def get_ma10min(ticker,window):
     """10분봉 20이동 평균선 조회"""
     df = pyupbit.get_ohlcv(ticker, interval="minute10", count=10)    
     #print(df)
-    ma10min = df['close'].rolling(window).mean()#.iloc[-1]
+    ma10min = df['close'].rolling(window=window).mean()#.iloc[-1]
     #print(ma10min)
     df['10min5MA'] = ma10min
     #df.to_excel("10min5MA.xlsx")
@@ -113,20 +113,19 @@ def get_coin_info(ticker):
     Assets.columns=['코인','잔고수량', '미체결 잔고수량','수량','현재가','수익율','매수가','평균가', '통화단위']
 
     if ticker == 'ALL':
-        mrkdwn_text = "\n>" + now.strftime("%H:%M %p") + "\n"        
+        
+        mrkdwn_text = ">"  + now.strftime("%H:%M %p")
+        
         for i in Assets.index:
             rates = get_coin_info(Assets.loc[i,'코인'])
             min10_MA5 = get_ma10min("KRW-" + Assets.loc[i,'코인'], 5)
             current_price = get_current_price("KRW-" + Assets.loc[i,'코인'])    
-            """ coinInfo = Assets.loc[i,['현재가', '수익율']]
-            mrkdwn_text = mrkdwn_text + "`" + str(Assets.loc[i,'코인']) + "`" + "\n```" + coinInfo.to_string() + "```\n" """
+            
             if min10_MA5 < current_price:
-                mrkdwn_text = mrkdwn_text + "`" + str(Assets.loc[i,'코인']) + "`\n" + "```▲" + str(rates) + "%\n" + str(current_price)  + "원\n" + "10분봉 5MA: " + "매수```\n"
+                mrkdwn_text = mrkdwn_text + "\n`" + str(Assets.loc[i,'코인']) + "`" + "\n" + "```▲" + str(rates) + "%" + "\n" + str(current_price)  + "원\n" + "10분봉 5MA: " + "매수```"
             else:
-                mrkdwn_text = mrkdwn_text + "`" + str(Assets.loc[i,'코인']) + "`\n" + "```▼" + str(rates) + "%\n" + str(current_price)  + "원\n" + "10분봉 5MA: " + "매도```\n"
-
-        mrk_message(mrkdwn_text)
-        time.sleep(5)
+                mrkdwn_text = mrkdwn_text + "\n`" + str(Assets.loc[i,'코인']) + "`" + "\n" + "```▼" + str(rates) + "%" + "\n" + str(current_price)  + "원\n" + "10분봉 5MA: " + "매도```"
+        mrk_message(mrkdwn_text)        
         return 0        
     
     for i in Assets.index:
@@ -138,7 +137,7 @@ def get_coin_info(ticker):
 upbit = pyupbit.Upbit(access, secret)
 print("autotrade start")
 # 시작 메세지 슬랙 전송
-post_message(myToken,"#crypto", "Upbit autotrade start")
+post_message(myToken,"#crypto", "\nUpbit autotrade start")
 coins=get_balance("ALL")
 coins.remove('KRW')
 
@@ -147,7 +146,7 @@ while True:
         now = datetime.datetime.now()
         start_time = get_start_time("KRW-DOGE")
         end_time = start_time + datetime.timedelta(days=1)
-        if now.minute % 10 == 0 and 0 <= now.second <= 5:                        
+        if now.minute % 1 == 0 and 0 <= now.second <= 5:                        
             get_coin_info('ALL')    
             time.sleep(5)
         #mrkdwn_text = ""
