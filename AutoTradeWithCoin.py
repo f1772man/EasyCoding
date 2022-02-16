@@ -163,16 +163,16 @@ while True:
                 ma30min = get_ma30min("KRW-" + coin)
                 min10_MA5 = get_ma10min("KRW-" + coin, 5)                
                              
-                if now.minute % 10 == 0 and 0 <= now.second <= 1:
+                if now.minute % 10 == 0 and 0 <= now.second <= 5:
                         if min10_MA5 < current_price:
-                            post_message(myToken,"#crypto", now.strftime("%H:%M,%p"))
+                            post_message(myToken,"#crypto", now.strftime("%H:%M %p"))
                             post_message(myToken,"#crypto", str(coin) + "매수유지\n▲" + str(rates) + "%\n" + str(current_price) + "원")
                         else:
-                            post_message(myToken,"#crypto", now.strftime("%H:%M","%p"))
+                            post_message(myToken,"#crypto", now.strftime("%H:%M %p"))
                             post_message(myToken,"#crypto", str(coin) + "매도신호\n▼" + str(rates) + "%\n" + str(current_price) + "원")
                 if target_price < current_price and ma15 < current_price:
                     krw = get_balance("KRW")
-                    i#post_message(myToken,"#crypto", coin + " 매수신호 ")
+                    #post_message(myToken,"#crypto", coin + " 매수신호 ")
                     if krw > 5000:
                         buy_result = upbit.buy_market_order("KRW-" + coin, krw*0.9995)
                         post_message(myToken,"#crypto", coin + " buy : " +str(buy_result))
