@@ -265,7 +265,7 @@ def sell_all():
 
 if __name__ == '__main__': 
     try:
-        symbol_list = ['A092300', 'A245620', 'A032820'] #현우산업, EDGC, 우리기술
+        symbol_list = ['A092300', 'A245620', 'A032820', 'A019170'] #현우산업, EDGC, 우리기술, 신풍제약
         bought_list = []     # 매수 완료된 종목 리스트
         target_buy_count = 1 # 매수할 종목 수
         buy_percent = 0.19   

@@ -1,29 +1,30 @@
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-slack_token = 'xoxb-2904724697475-2901783823621-W3nHJbxA3d4ajowkPZfuObzz'
+slack_token = 'xoxb-2904724697475-2901783823621-9BpFVVf3rFKm92gC235KBEq5'
 
 client = WebClient(token=slack_token)
 
 
 mrkdwn_text = '''
-This is test message.
-> Block quote
-
-*Bold text*
-
 ```
-code block - line 1
-code block - line 2\ncode block - line 3
-```
-
-`highlight`
-
-_italicize_
-
-~Strikethrough~
-
-<https://www.google.com|This is link to google.com>
+>08:50 AM```
+`CVC`
+```▲-7.4%
+376.0원
+10분봉 5MA: 매수```
+`DOGE`
+```▲-2.2%
+182.0원
+10분봉 5MA: 매수```
+`NU`
+```▲-10.5%
+670.0원
+10분봉 5MA: 매수```
+`FLOW`
+```▼-12.2%
+8910.0원
+10분봉 5MA: 매도```
 '''
 
 
