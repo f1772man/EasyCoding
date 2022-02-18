@@ -144,16 +144,16 @@ while True:
     try:
         now = datetime.datetime.now()
         start_time = get_start_time("KRW-DOGE")
-        end_time = start_time + datetime.timedelta(days=1)
-        if now.minute % 10 == 0 and 0 <= now.second <= 5:            
-            get_coin_info('ALL') 
-            time.sleep(5)
+        end_time = start_time + datetime.timedelta(days=1)        
         
         for coin in coins:
             if start_time < now < end_time - datetime.timedelta(seconds=10):    # 오늘 09:00 < 현재 < 익일 08:59:50                            
                 target_price = get_target_price('KRW-' + coin, 0.5)
                 current_price = get_current_price('KRW-' + coin)
                 ma15 = get_ma15('KRW-' + coin)
+                if now.minute % 10 == 0 and 0 <= now.second <= 5:            
+                    get_coin_info('ALL') 
+                    time.sleep(5)
                 
                 if target_price < current_price and ma15 < current_price:
                     krw = get_balance("KRW")
@@ -169,5 +169,5 @@ while True:
             time.sleep(1)        
     except Exception as e:
         print(e)
-        post_message(myToken,"#crypto", e)
+        post_message(myToken,"#crypto", e + "while")
         time.sleep(1)
