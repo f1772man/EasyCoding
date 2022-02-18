@@ -105,7 +105,7 @@ def get_coin_info(ticker):
 
     if ticker == 'ALL':
         mrkdwn_text = ""
-        mrkdwn_text = now.strftime('>%H:%M %p')
+        mrkdwn_text = now.strftime('>%H:%M:%S %p')
         
         for i in balances.index:
             rates = get_coin_info(balances.loc[i,'코인'])
@@ -122,7 +122,7 @@ def get_coin_info(ticker):
                 mrkdwn_text = mrkdwn_text + "\n`" + str(balances.loc[i,'코인']) + "`\n```" + str(int(current_price)) + " (" + str(rates) + "%)\n" + lastrates  +  "\n" +   "상승```\n"
             else:
                 mrkdwn_text = mrkdwn_text + "\n`" + str(balances.loc[i,'코인']) + "`\n```" + str(int(current_price)) + " (" + str(rates) + "%)\n" + lastrates  +  "\n" +   "하강```\n"
-                
+        mrkdwn_text = mrkdwn_text + now.strftime('>%H:%M:%S %p')
         post_message(myToken,"#crypto", mrkdwn_text)
     else:
         for i in balances.index:
@@ -134,7 +134,9 @@ def get_coin_info(ticker):
 upbit = pyupbit.Upbit(access, secret)
 print("autotrade start")
 # 시작 메세지 슬랙 전송
-post_message(myToken,"#crypto", datetime.datetime.now().strftime('\n>%m-%d %H:%M%p') + "\n>Upbit autotrade start" )
+post_message(myToken, "#crypto", ' ')
+startTime = datetime.datetime.now().strftime('\n>%m-%d %H:%M:%S%p')
+post_message(myToken,"#crypto", startTime + "\n>Upbit autotrade start" )
 coins=get_balance("ALL")
 coins.remove('KRW')
 
