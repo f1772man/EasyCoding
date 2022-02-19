@@ -23,7 +23,7 @@ def dbgout(message):
     """인자로 받은 문자열을 파이썬 셸과 슬랙으로 동시에 출력한다."""
     print(datetime.datetime.now().strftime('[%m/%d %H:%M:%S]'), message)
     strbuf = datetime.datetime.now().strftime('[%m/%d %H:%M:%S] ') + message
-    post_message(myToken,"#stock", strbuf)
+    post_message(myToken,"#crypto", strbuf)
 
 def get_target_price(ticker, k):
     """변동성 돌파 전략으로 매수 목표가 조회"""
@@ -66,13 +66,13 @@ def get_ma10min(ticker,window):
 
 def get_balance(ticker):
     """잔고 조회"""
-    coins=[]
+    coinlist=[]
     balances = upbit.get_balances()
     
     if ticker == 'ALL':
         for item in balances:
-            coins.append(item['currency'])
-        return coins
+            coinlist.append(item['currency'])
+        return coinlist
     
     for b in balances:
         if b['currency'] == ticker:
@@ -130,7 +130,7 @@ def get_coin_info(ticker):
             else:
                 mrkdwn_text = mrkdwn_text + "\n`" + str(balances.loc[i,'코인']) + "`\n```" + str(int(current_price)) + " (" + str(rates) + "%)\n" + lastrates  +  "\n" +   "하강```\n"
         mrkdwn_text = mrkdwn_text + now.strftime('>%H:%M:%S %p')
-        post_message(myToken,"#crypto", mrkdwn_text)
+        #post_message(myToken,"#crypto", mrkdwn_text)
         dbgout(mrkdwn_text)
     else:
         for i in balances.index:
@@ -142,9 +142,9 @@ def get_coin_info(ticker):
 upbit = pyupbit.Upbit(access, secret)
 print("autotrade start")
 # 시작 메세지 슬랙 전송
-post_message(myToken, "#crypto", ' ')
+#post_message(myToken, "#crypto", ' ')
 startTime = datetime.datetime.now().strftime('\n>%m-%d %H:%M:%S%p')
-post_message(myToken,"#crypto", startTime + "\n>Upbit autotrade start" )
+#post_message(myToken,"#crypto", startTime + "\n>Upbit autotrade start" )
 dbgout(startTime + "\n>Upbit autotrade start")
 coins=get_balance("ALL")
 coins.remove('KRW')
@@ -166,20 +166,23 @@ while True:
                     #post_message(myToken,"#crypto", coin + " 매수신호 ")
                     if krw > 5000:
                         buy_result = upbit.buy_market_order('KRW-' + coin, krw*0.9995)
-                        post_message(myToken,"#crypto", coin + "buy : " +str(buy_result))
+                        #post_message(myToken,"#crypto", coin + "buy : " +str(buy_result))
+                        dbgout(coin + "buy : " +str(buy_result))
             else:
                 dbgout("Current Time in Sell")
                 coin = get_balance(coins[0])
                 if coin > 0.00008:
                     sell_result = upbit.sell_market_order('KRW-' + coin, coin*0.5)        #coin*0.9995)
-                    post_message(myToken,"#crypto", coin + "buy : " +str(sell_result))
+                    #post_message(myToken,"#crypto", coin + "buy : " +str(sell_result))
+                    dbgout(coin + "buy : " +str(sell_result))
         time.sleep(1)
         if now.minute % 10 == 0 and 0 <= now.second <= 5:
             get_coin_info('ALL') 
             time.sleep(5)
-            post_message(myToken,"#crypto", "After get coin info" + datetime.datetime.now().strftime('\n%m-%d %H:%M:%S%p'))
+            #post_message(myToken,"#crypto", "After get coin info" + datetime.datetime.now().strftime('\n%m-%d %H:%M:%S%p'))
             dbgout(datetime.datetime.now().strftime('\n%m-%d %H:%M:%S%p'))
     except Exception as e:
         print(e)
-        post_message(myToken,"#crypto", e)
+        #post_message(myToken,"#crypto", e)
+        dbgout(e)
         time.sleep(1)
