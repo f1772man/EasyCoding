@@ -181,5 +181,5 @@ while True:
             dbgout(datetime.datetime.now().strftime('\n%m-%d %H:%M:%S%p'))
     except Exception as e:
         print(e)
-        post_message(myToken,"#crypto", e + "while")
+        post_message(myToken,"#crypto", e)
         time.sleep(1)
