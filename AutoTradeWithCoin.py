@@ -115,7 +115,7 @@ def get_coin_info(ticker):
         mrkdwn_text = now.strftime('>%H:%M:%S %p')
         
         for i in balances.index:
-            rates = get_coin_info(balances.loc[i,'코인'])
+            rates = round(balances.loc[i, '수익율'],1)
             min10_MA5 = get_ma10min("KRW-" + balances.loc[i,'코인'], 5)
             min10_MA20 = get_ma10min("KRW-" + balances.loc[i,'코인'], 20)
             current_price = get_current_price("KRW-" + balances.loc[i,'코인'])
