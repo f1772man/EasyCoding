@@ -143,7 +143,8 @@ upbit = pyupbit.Upbit(access, secret)
 print("autotrade start")
 # 시작 메세지 슬랙 전송
 
-dbgout("Upbit autotrade start")
+dbgout("\n
+Upbit autotrade start")
 coins=get_balance("ALL")
 coins.remove('KRW')
 
