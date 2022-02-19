@@ -143,8 +143,7 @@ upbit = pyupbit.Upbit(access, secret)
 print("autotrade start")
 # 시작 메세지 슬랙 전송
 
-dbgout("\n
-Upbit autotrade start")
+dbgout("\nUpbit autotrade start")
 coins=get_balance("ALL")
 coins.remove('KRW')
 
@@ -177,7 +176,8 @@ while True:
                     dbgout(coin + "buy : " +str(sell_result))
         time.sleep(1)
         if now.minute % 10 == 0 and 0 <= now.second <= 5:
-            get_coin_info('ALL') 
+            #get_coin_info('ALL')
+            dbgout("hi")
             time.sleep(5)
             #post_message(myToken,"#crypto", "After get coin info" + datetime.datetime.now().strftime('\n%m-%d %H:%M:%S%p'))
             dbgout("After get coin info")
