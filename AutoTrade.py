@@ -220,12 +220,12 @@ def buy_etf(code):
                 return False
             time.sleep(2)
             printlog('현금주문 가능금액 :', buy_amount)
-            stock_name, bought_qty = get_stock_balance(code)
+            stock_name, trading_note = get_stock_balance(code)
             printlog('get_stock_balance :', stock_name, stock_qty)
-            if bought_qty > 0:
+            if trading_note > 0:
                 bought_list.append(code)
                 dbgout("`buy_etf("+ str(stock_name) + ' : ' + str(code) + 
-                    ") -> " + str(bought_qty) + "EA bought!" + "`")
+                    ") -> " + str(trading_note) + "EA bought!" + "`")
     except Exception as ex:
         dbgout("`buy_etf("+ str(code) + ") -> exception! " + str(ex) + "`")
 

@@ -4,7 +4,6 @@ import datetime
 import time
 import requests
 import pandas as pd
-import os
 from matplotlib import ticker
 
 with open("upbit.txt") as f:
@@ -24,7 +23,7 @@ def post_message(token, channel, text):
 def dbgout(message):
     """인자로 받은 문자열을 파이썬 셸과 슬랙으로 동시에 출력한다."""
     print(datetime.datetime.now().strftime('[%m/%d %H:%M:%S]'), message)
-    strbuf = datetime.datetime.now().strftime('[%m/%d %H:%M:%S] ') + message
+    strbuf = datetime.datetime.now().strftime("[%m/%d %H:%M:%S] ") + message
     post_message(myToken,"#crypto", strbuf)
 
 def get_target_price(ticker, k):
@@ -57,7 +56,7 @@ def get_ma30min(ticker):
 
 def get_ma10min(ticker,window):
     """10분봉 20이동 평균선 조회"""
-    df = pyupbit.get_ohlcv(ticker, interval="minute10", count=20)    
+    df = pyupbit.get_ohlcv(ticker, interval="minute10", count=window)    
     ma10min = df['close'].rolling(window=window).mean().iloc[-1]    
     return ma10min
 
@@ -87,7 +86,6 @@ def get_coin_info(ticker):
     pd.set_option('display.unicode.east_asian_width', True)
     pd.options.display.float_format = '{:,.1f}'.format
     balances = pd.DataFrame(upbit.get_balances())
-    print(balances)    
     balances = balances.drop([0])               # 첫번째 현금 보유 정보는 삭제함
 
     totalBalance = []           # 보유수량(잔고수량) = 잔고수량 + 미체결 잔고수량 계산하여 데이터 프레임에 추가
@@ -112,7 +110,7 @@ def get_coin_info(ticker):
         mrkdwn_text = ""        
         
         for i in balances.index:
-            rates = round(balances.loc[i, '수익율'],1)
+            rates = round(balances.loc[i, "수익율"],1)
             min10_MA5 = get_ma10min("KRW-" + balances.loc[i,'코인'], 5)
             min10_MA20 = get_ma10min("KRW-" + balances.loc[i,'코인'], 20)
             current_price = get_current_price("KRW-" + balances.loc[i,'코인'])
@@ -130,7 +128,8 @@ def get_coin_info(ticker):
     else:
         for i in balances.index:
             if balances.loc[i, '코인'] == ticker:
-                return round(balances.loc[i, '수익율'],1)    
+                return round(balances.loc[i, '수익율'],1)
+    
 
 # 로그인
 upbit = pyupbit.Upbit(access, secret)
@@ -141,9 +140,7 @@ dbgout("\nUpbit autotrade start")
 coins=get_balance("ALL")
 #print(coins.dtype)
 coins.remove('KRW')
-#coins = ['CVC', 'DOGE', 'NU', 'FLOW']
-labels = ['currency', 'balance']
-trading_note = {}
+
 while True:
     try:
         now = datetime.datetime.now()
@@ -155,47 +152,19 @@ while True:
                 target_price = get_target_price("KRW-" + coin, 0.5)
                 current_price = get_current_price("KRW-" + coin)
                 ma15 = get_ma15("KRW-" + coin)                
-                ma30 = get_ma30min("KRW-" + coin)
+                
                 if target_price < current_price and ma15 < current_price:
-                    krw = get_balance("KRW")
-                    coindict = trading_note.get('Coin')
-                    if krw > 5000 and coindict is None:                        
-                        buy_result = upbit.buy_market_order("KRW-" + coin, 10000)
-                        trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
-                        trading_note['Coin'] = coin
-                        trading_note['Qty'] = 10000 / pyupbit.get_current_price("KRW-" + coin)
-                        trading_note['Side'] = "buy"
-                        trading_note['Price'] = pyupbit.get_current_price("KRW-" + coin)                        
+                    krw = get_balance("KRW")                    
+                    if krw > 5000:
+                        buy_result = upbit.buy_market_order("KRW-" + coin, krw)                        
                         dbgout(coin + " buy : " +str(buy_result))
-                        df = pd.DataFrame([trading_note])
-                        # .to_csv 
-                        # 최초 생성 이후 mode는 append
-                        if not os.path.exists('Transaction.csv'):
-                            df.to_csv('Transaction.csv', index=False, mode='w', encoding='utf-8-sig')
-                        else:
-                            df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
-            else:                
+            else:
+                dbgout("Current Time in Sell")
                 coinbalance = get_balance(coin)
-                if coinbalance is not None:
-                    if coinbalance > 0.00008:
-                        sell_result = upbit.sell_market_order("KRW-" + coin, coinbalance)
-                        trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
-                        trading_note['Coin'] = coin
-                        trading_note['Qty'] = coinbalance
-                        trading_note['Side'] = "sell"
-                        trading_note['Price'] = pyupbit.get_current_price("KRW-" + coin)
-                        dbgout(coin + " sell : " +str(sell_result))
-                        df = pd.DataFrame([trading_note])
-                        # .to_csv 
-                        # 최초 생성 이후 mode는 append
-                        if not os.path.exists('Transaction.csv'):
-                            df.to_csv('Transaction.csv', index=False, mode='w', encoding='utf-8-sig')
-                        else:
-                            df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
-                else:
-                    print("매도 가능한 자산이 없다.")
+                if coinbalance > 0.00008:
+                    sell_result = upbit.sell_market_order("KRW-" + coin, coinbalance)      
+                    dbgout(coin + " sell : " +str(sell_result))
         time.sleep(1)
-        
         if now.minute % 1 == 0 and 0 <= now.second <= 5:
             get_coin_info('ALL')            
             time.sleep(5)            
