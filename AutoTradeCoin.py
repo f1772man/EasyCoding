@@ -113,6 +113,7 @@ def get_coin_info(ticker):
             rates = round(balances.loc[i, "수익율"],1)
             min10_MA5 = get_ma10min("KRW-" + balances.loc[i,'코인'], 5)
             min10_MA20 = get_ma10min("KRW-" + balances.loc[i,'코인'], 20)
+            print(min10_MA20)
             current_price = get_current_price("KRW-" + balances.loc[i,'코인'])
             last_price = get_lastday_close("KRW-" + balances.loc[i,'코인'])
             lastrate = round((current_price / last_price)*100 - 100, 2)
