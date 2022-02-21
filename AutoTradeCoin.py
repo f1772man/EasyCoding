@@ -29,7 +29,8 @@ def dbgout(message):
 def get_target_price(ticker, k):
     """변동성 돌파 전략으로 매수 목표가 조회"""
     df = pyupbit.get_ohlcv(ticker, interval="day", count=2)
-    target_price = df.iloc[0]['close'] + (df.iloc[0]['high'] - df.iloc[0]['low']) * k
+    #target_price = df.iloc[0]['close'] + (df.iloc[0]['high'] - df.iloc[0]['low']) * k
+    target_price = df.iloc[0][3] + (df.iloc[0][1] - df.iloc[0][2]) * k
     return target_price
 
 def get_lastday_close(ticker):
@@ -150,7 +151,7 @@ while True:
         
         for coin in coins:
             if start_time < now < end_time - datetime.timedelta(seconds=10):    # 오늘 09:00 < 현재 < 익일 08:59:50                            
-                target_price = get_target_price("KRW-" + coin, 0.5)
+                target_price = get_target_price("KRW-" + 'CVC', 0.5)
                 current_price = get_current_price("KRW-" + coin)
                 ma15 = get_ma15("KRW-" + coin)                
                 
