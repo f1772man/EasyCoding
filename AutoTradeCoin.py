@@ -166,7 +166,7 @@ while True:
                 if coinbalance > 0.00008:
                     sell_result = upbit.sell_market_order("KRW-" + coin, coinbalance)      
                     dbgout(coin + " sell : " +str(sell_result))
-        time.sleep(1)
+            time.sleep(1)
         if now.minute % 10 == 0 and 0 <= now.second <= 5:
             get_coin_info('ALL')            
             time.sleep(5)            
