@@ -35,7 +35,7 @@ def get_target_price(ticker, k):
 
 def get_lastday_close(ticker):
     df = pyupbit.get_ohlcv(ticker, interval="day", count=2)
-    return df.iloc[0]['close']
+    return df.iloc[0][3]
 
 def get_start_time(ticker):
     """시작 시간 조회"""
@@ -46,21 +46,19 @@ def get_start_time(ticker):
 def get_ma15(ticker):
     """15일 이동 평균선 조회"""
     df = pyupbit.get_ohlcv(ticker, interval="day", count=15)    
-    ma15 = df['close'].rolling(15).mean().iloc[-1]
-    print(ticker)
-    print(df['close'])
+    ma15 = df['close'].rolling(window=15,min_periods=1).mean().iloc[-1]    
     return ma15
 
 def get_ma30min(ticker):
     """30분봉 20이동 평균선 조회"""
     df = pyupbit.get_ohlcv(ticker, interval="minute30", count=20)    
-    ma30min = df['close'].rolling(20).mean().iloc[-1]    
+    ma30min = df['close'].rolling(window=20,min_periods=1).mean().iloc[-1]    
     return ma30min
 
 def get_ma10min(ticker,window):
     """10분봉 20이동 평균선 조회"""
     df = pyupbit.get_ohlcv(ticker, interval="minute10", count=window)    
-    ma10min = df['close'].rolling(window=window).mean().iloc[-1]    
+    ma10min = df['close'].rolling(window=window,min_periods=1).mean().iloc[-1]    
     return ma10min
 
 def get_balance(ticker):
@@ -169,7 +167,7 @@ while True:
                     sell_result = upbit.sell_market_order("KRW-" + coin, coinbalance)      
                     dbgout(coin + " sell : " +str(sell_result))
         time.sleep(1)
-        if now.minute % 1 == 0 and 0 <= now.second <= 5:
+        if now.minute % 10 == 0 and 0 <= now.second <= 5:
             get_coin_info('ALL')            
             time.sleep(5)            
     except Exception as e:
