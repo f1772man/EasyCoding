@@ -140,9 +140,11 @@ print("autotrade start")
 # 시작 메세지 슬랙 전송
 
 dbgout("\nUpbit autotrade start")
-coins=get_balance("ALL")
+#coins=get_balance("ALL")
 #print(coins.dtype)
-coins.remove('KRW')
+#coins.remove('KRW')
+coins = ['STRK']
+bought_list = []
 
 while True:
     try:
@@ -152,14 +154,15 @@ while True:
         
         for coin in coins:
             if start_time < now < end_time - datetime.timedelta(seconds=10):    # 오늘 09:00 < 현재 < 익일 08:59:50                            
-                target_price = get_target_price("KRW-" +  str(coin), 0.5)
+                target_price = get_target_price("KRW-" +  str(coin), 0.2)
                 current_price = get_current_price("KRW-" + coin)
                 ma15 = get_ma15("KRW-" + coin)                
                 
                 if target_price < current_price and ma15 < current_price:
                     krw = get_balance("KRW")                    
-                    if krw > 5000:
-                        buy_result = upbit.buy_market_order("KRW-" + coin, krw)                        
+                    if krw > 5000 and coin not in bought_list:                  # 해당 종목을 구매했으면 재구매하지않는다.
+                        buy_result = upbit.buy_market_order("KRW-" + coin, 10000)                        
+                        bought_list.append(coin)
                         dbgout(coin + " buy")
             else:                
                 coinbalance = get_balance(coin)
