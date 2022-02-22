@@ -125,7 +125,8 @@ def get_coin_info(ticker):
             if min10_MA5 < current_price and min10_MA5 > min10_MA20:
                 mrkdwn_text = mrkdwn_text + "\n`" + str(balances.loc[i,'코인']) + "`\n```" + str(int(current_price)) + " (" + str(rates) + "%)\n" + lastrates  +  "\n" +   "상승```\n"
             else:
-                mrkdwn_text = mrkdwn_text + "\n`" + str(balances.loc[i,'코인']) + "`\n```" + str(int(current_price)) + " (" + str(rates) + "%)\n" + lastrates  +  "\n" +   "하강```\n"        
+                mrkdwn_text = mrkdwn_text + "\n`" + str(balances.loc[i,'코인']) + "`\n```" + str(int(current_price)) + " (" + str(rates) + "%)\n" + lastrates  +  "\n" +   "하강```\n"
+            time.sleep(1)
         dbgout(mrkdwn_text)
     else:
         for i in balances.index:
@@ -151,7 +152,7 @@ while True:
         
         for coin in coins:
             if start_time < now < end_time - datetime.timedelta(seconds=10):    # 오늘 09:00 < 현재 < 익일 08:59:50                            
-                target_price = get_target_price("KRW-" + 'CVC', 0.5)
+                target_price = get_target_price("KRW-" +  str(coin), 0.5)
                 current_price = get_current_price("KRW-" + coin)
                 ma15 = get_ma15("KRW-" + coin)                
                 
@@ -159,13 +160,12 @@ while True:
                     krw = get_balance("KRW")                    
                     if krw > 5000:
                         buy_result = upbit.buy_market_order("KRW-" + coin, krw)                        
-                        dbgout(coin + " buy : " +str(buy_result))
-            else:
-                dbgout("Current Time in Sell")
+                        dbgout(coin + " buy")
+            else:                
                 coinbalance = get_balance(coin)
                 if coinbalance > 0.00008:
                     sell_result = upbit.sell_market_order("KRW-" + coin, coinbalance)      
-                    dbgout(coin + " sell : " +str(sell_result))
+                    dbgout(coin + " sell")
             time.sleep(1)
         if now.minute % 10 == 0 and 0 <= now.second <= 5:
             get_coin_info('ALL')            
