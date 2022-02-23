@@ -178,12 +178,13 @@ def buy_coin():
 
 def sell_coin():
     sell_result = upbit.sell_market_order("KRW-" + coin, coinbalance)
+    bought_list.remove(coin)
     trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
     trading_note['Coin'] = coin
     trading_note['Qty'] = coinbalance
     trading_note['Side'] = "sell"
     trading_note['Price'] = pyupbit.get_current_price("KRW-" + coin)
-    dbgout(coin + " sell : " +str(trading_note['Price']))
+    dbgout(coin + " sell : " +str(sell_result))
     df = pd.DataFrame([trading_note])
     # .to_csv 
     # 최초 생성 이후 mode는 append
@@ -198,12 +199,13 @@ print("autotrade start")
 # 시작 메세지 슬랙 전송
 
 dbgout("\nUpbit autotrade start")
-#coins=get_balance("ALL")
-coins = ['DOGE','FLOW','MLK','HBAR','NU','CVC','AERGO','STRK']
+coins=get_balance("ALL")
+buycoins = ['DOGE','FLOW','MLK','HBAR','NU','CVC','AERGO','STRK']
     
 labels = ['currency', 'balance']
 trading_note = {}
 bought_list = []
+bought_list.extend(coins)
 RSI_list = []
 while True:
     try:
@@ -211,7 +213,7 @@ while True:
         start_time = get_start_time("KRW-DOGE")
         end_time = start_time + datetime.timedelta(days=1)        
         
-        for coin in coins:
+        for coin in buycoins:
             # 오늘 09:00 < 현재 < 익일 08:59:50
             if start_time < now < end_time - datetime.timedelta(seconds=60):
                 target_price = get_target_price("KRW-" + coin, 0.2)
@@ -227,10 +229,10 @@ while True:
                 if target_price < current_price and ma15 < current_price:
                     krw = get_balance("KRW")
                     coindict = trading_note.get('Coin')
-                    if krw > 5000 and get_balance(coin) < 0:
+                    if krw > 5000 and get_balance(coin) < 0 and coin not in bought_list:
                         buy_coin()
                 # 골든크로스 20이평선이 60이평선을 뚫는 조건을 만족하고 30분봉 RSI 값이 30 밑으로 떨어질때
-                elif min10_MA20 > min10_MA60: #and coin in RSI_list:          
+                elif min10_MA20 > min10_MA60:       #and coin in RSI_list
                     krw = get_balance("KRW")
                     if krw > 5000 and coin not in bought_list:                  
                         buy_coin()
