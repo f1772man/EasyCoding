@@ -57,7 +57,7 @@ def get_ma30min(ticker):
 
 def get_ma10min(ticker,window):
     """10분봉 20이동 평균선 조회"""
-    df = pyupbit.get_ohlcv(ticker, interval="minute10", count=window+10)    
+    df = pyupbit.get_ohlcv(ticker, interval="minute10", count=window)    
     ma10min = df['close'].rolling(window=window).mean().iloc[-1]    
     return round(ma10min,1)
 
@@ -126,7 +126,8 @@ def get_coin_info(ticker):
             if min10_MA5 < current_price and min10_MA5 > min10_MA20:
                 mrkdwn_text = mrkdwn_text + "\n`" + str(balances.loc[i,'코인']) + "`\n```" + str(int(current_price)) + " (" + str(rates) + "%)\n" + lastrates  +  "\n" +   "상승```\n"
             else:
-                mrkdwn_text = mrkdwn_text + "\n`" + str(balances.loc[i,'코인']) + "`\n```" + str(int(current_price)) + " (" + str(rates) + "%)\n" + lastrates  +  "\n" +   "하강```\n"        
+                mrkdwn_text = mrkdwn_text + "\n`" + str(balances.loc[i,'코인']) + "`\n```" + str(int(current_price)) + " (" + str(rates) + "%)\n" + lastrates  +  "\n" +   "하강```\n"
+            time.sleep(1)
         dbgout(mrkdwn_text)
     else:
         for i in balances.index:
@@ -250,9 +251,9 @@ while True:
                         sell_coin()
                 else:
                     print("매도 가능한 자산이 없다.")
-        time.sleep(1)
+            time.sleep(1)
         
-        if now.minute % 1 == 0 and 10 <= now.second <= 15:
+        if now.minute % 10 == 0 and 10 <= now.second <= 15:
             get_coin_info('ALL')            
             time.sleep(5)            
     except Exception as e:
