@@ -87,8 +87,7 @@ def get_current_price(ticker):
 def get_coin_info(ticker):
     pd.set_option('display.unicode.east_asian_width', True)
     pd.options.display.float_format = '{:,.1f}'.format
-    balances = pd.DataFrame(upbit.get_balances())
-    print(balances)    
+    balances = pd.DataFrame(upbit.get_balances())    
     balances = balances.drop([0])               # 첫번째 현금 보유 정보는 삭제함
 
     totalBalance = []           # 보유수량(잔고수량) = 잔고수량 + 미체결 잔고수량 계산하여 데이터 프레임에 추가
@@ -232,12 +231,12 @@ while True:
                     coindict = trading_note.get('Coin')
                     if krw > 5000 and get_balance(coin) < 0 and coin not in bought_list:
                         buy_coin()
-                # 골든크로스 20이평선이 60이평선을 뚫는 조건을 만족하고 30분봉 RSI 값이 30 밑으로 떨어질때
-                elif min10_MA20 > min10_MA60:       #and coin in RSI_list
+                # 골든크로스 20이평선이 60이평선을 뚫는 조건을 만족하고 30분봉 RSI 값이 50 밑으로 떨어질때
+                elif min10_MA20 > min10_MA60 and min30rsi <= 50:       #and coin in RSI_list
                     krw = get_balance("KRW")
                     if krw > 5000 and coin not in bought_list:                  
                         buy_coin()
-                elif min10_MA20 < min10_MA60:
+                elif min10_MA20 < min10_MA60 or min30rsi >= 85:
                     coinbalance = get_balance(coin)
                     if coinbalance is not None:
                         if coinbalance > 0.00008:
