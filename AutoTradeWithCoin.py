@@ -57,9 +57,9 @@ def get_ma30min(ticker):
 
 def get_ma10min(ticker,window):
     """10분봉 20이동 평균선 조회"""
-    df = pyupbit.get_ohlcv(ticker, interval="minute10", count=20)    
+    df = pyupbit.get_ohlcv(ticker, interval="minute10", count=window+10)    
     ma10min = df['close'].rolling(window=window).mean().iloc[-1]    
-    return ma10min
+    return round(ma10min,1)
 
 def get_balance(ticker):
     """잔고 조회"""
@@ -68,7 +68,8 @@ def get_balance(ticker):
     
     if ticker == 'ALL':
         for item in balances:
-            coinlist.append(item['currency'])        
+            if item['currency'] != 'KRW':
+                coinlist.append(item['currency'])        
         return coinlist
     
     for b in balances:
@@ -132,18 +133,78 @@ def get_coin_info(ticker):
             if balances.loc[i, '코인'] == ticker:
                 return round(balances.loc[i, '수익율'],1)    
 
+def get_RSI(ticker, period = 14, column = 'close'):
+    df = pyupbit.get_ohlcv(ticker, interval="minute30", count=100)
+    df = pd.DataFrame(df)
+    df.to_csv("rsi.csv")
+    
+    delta = df[column].diff(1)    
+    delta = delta.dropna()   
+
+    gain = delta.copy()    
+    loss = delta.copy()
+    gain[gain < 0] = 0    
+    loss[loss > 0] = 0
+    
+    df['gain'] = gain
+    df['loss'] = loss
+    
+    gainmean = gain.ewm(com=13, adjust=False).mean()
+    lossmean = loss.abs().ewm(com=13, adjust=False).mean()
+    RS = gainmean / lossmean
+
+    RSI = 100.0 - (100.0 / (1.0 + RS))    
+    
+    df['RSI'] = RSI
+    
+    return df['RSI']
+
+def buy_coin():
+    buy_result = upbit.buy_market_order("KRW-" + coin, 10000)
+    bought_list.append(coin)
+    trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
+    trading_note['Coin'] = coin
+    trading_note['Qty'] = 10000 / pyupbit.get_current_price("KRW-" + coin)
+    trading_note['Side'] = "buy"
+    trading_note['Price'] = pyupbit.get_current_price("KRW-" + coin)                        
+    dbgout(coin + " buy : " +str(buy_result))
+    df = pd.DataFrame([trading_note])
+    # .to_csv 
+    # 최초 생성 이후 mode는 append
+    if not os.path.exists('Transaction.csv'):
+        df.to_csv('Transaction.csv', index=False, mode='w', encoding='utf-8-sig')
+    else:
+        df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
+
+def sell_coin():
+    sell_result = upbit.sell_market_order("KRW-" + coin, coinbalance)
+    trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
+    trading_note['Coin'] = coin
+    trading_note['Qty'] = coinbalance
+    trading_note['Side'] = "sell"
+    trading_note['Price'] = pyupbit.get_current_price("KRW-" + coin)
+    dbgout(coin + " sell : " +str(trading_note['Price']))
+    df = pd.DataFrame([trading_note])
+    # .to_csv 
+    # 최초 생성 이후 mode는 append
+    if not os.path.exists('Transaction.csv'):
+        df.to_csv('Transaction.csv', index=False, mode='w', encoding='utf-8-sig')
+    else:
+        df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
+
 # 로그인
 upbit = pyupbit.Upbit(access, secret)
 print("autotrade start")
 # 시작 메세지 슬랙 전송
 
 dbgout("\nUpbit autotrade start")
-coins=get_balance("ALL")
-#print(coins.dtype)
-coins.remove('KRW')
-#coins = ['CVC', 'DOGE', 'NU', 'FLOW']
+#coins=get_balance("ALL")
+coins = ['DOGE','FLOW','MLK','HBAR','NU','CVC','AERGO','STRK']
+    
 labels = ['currency', 'balance']
 trading_note = {}
+bought_list = []
+RSI_list = []
 while True:
     try:
         now = datetime.datetime.now()
@@ -151,52 +212,45 @@ while True:
         end_time = start_time + datetime.timedelta(days=1)        
         
         for coin in coins:
-            if start_time < now < end_time - datetime.timedelta(seconds=10):    # 오늘 09:00 < 현재 < 익일 08:59:50                            
-                target_price = get_target_price("KRW-" + coin, 0.5)
+            # 오늘 09:00 < 현재 < 익일 08:59:50
+            if start_time < now < end_time - datetime.timedelta(seconds=60):
+                target_price = get_target_price("KRW-" + coin, 0.2)
                 current_price = get_current_price("KRW-" + coin)
                 ma15 = get_ma15("KRW-" + coin)                
                 ma30 = get_ma30min("KRW-" + coin)
+                min10_MA20 = get_ma10min("KRW-" + coin, 20)
+                min10_MA60 = get_ma10min("KRW-" + coin, 60)
+                rsi = get_RSI("KRW-" + coin, period = 14)               
+                min30rsi = rsi.iloc[-1]
+                if min30rsi <= 30:
+                    RSI_list.append(coin)
                 if target_price < current_price and ma15 < current_price:
                     krw = get_balance("KRW")
                     coindict = trading_note.get('Coin')
-                    if krw > 5000 and coindict is None:                        
-                        buy_result = upbit.buy_market_order("KRW-" + coin, 10000)
-                        trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
-                        trading_note['Coin'] = coin
-                        trading_note['Qty'] = 10000 / pyupbit.get_current_price("KRW-" + coin)
-                        trading_note['Side'] = "buy"
-                        trading_note['Price'] = pyupbit.get_current_price("KRW-" + coin)                        
-                        dbgout(coin + " buy : " +str(buy_result))
-                        df = pd.DataFrame([trading_note])
-                        # .to_csv 
-                        # 최초 생성 이후 mode는 append
-                        if not os.path.exists('Transaction.csv'):
-                            df.to_csv('Transaction.csv', index=False, mode='w', encoding='utf-8-sig')
-                        else:
-                            df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
+                    if krw > 5000 and get_balance(coin) < 0:
+                        buy_coin()
+                # 골든크로스 20이평선이 60이평선을 뚫는 조건을 만족하고 30분봉 RSI 값이 30 밑으로 떨어질때
+                elif min10_MA20 > min10_MA60: #and coin in RSI_list:          
+                    krw = get_balance("KRW")
+                    if krw > 5000 and coin not in bought_list:                  
+                        buy_coin()
+                elif min10_MA20 < min10_MA60:
+                    coinbalance = get_balance(coin)
+                    if coinbalance is not None:
+                        if coinbalance > 0.00008:
+                            sell_coin()
+                    else:
+                        print("매도 가능한 자산이 없다.")
             else:                
                 coinbalance = get_balance(coin)
                 if coinbalance is not None:
                     if coinbalance > 0.00008:
-                        sell_result = upbit.sell_market_order("KRW-" + coin, coinbalance)
-                        trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
-                        trading_note['Coin'] = coin
-                        trading_note['Qty'] = coinbalance
-                        trading_note['Side'] = "sell"
-                        trading_note['Price'] = pyupbit.get_current_price("KRW-" + coin)
-                        dbgout(coin + " sell : " +str(sell_result))
-                        df = pd.DataFrame([trading_note])
-                        # .to_csv 
-                        # 최초 생성 이후 mode는 append
-                        if not os.path.exists('Transaction.csv'):
-                            df.to_csv('Transaction.csv', index=False, mode='w', encoding='utf-8-sig')
-                        else:
-                            df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
+                        sell_coin()
                 else:
                     print("매도 가능한 자산이 없다.")
         time.sleep(1)
         
-        if now.minute % 1 == 0 and 0 <= now.second <= 5:
+        if now.minute % 1 == 0 and 10 <= now.second <= 15:
             get_coin_info('ALL')            
             time.sleep(5)            
     except Exception as e:
