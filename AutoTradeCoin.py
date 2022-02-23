@@ -67,8 +67,9 @@ def get_balance(ticker):
     balances = upbit.get_balances()
     
     if ticker == 'ALL':
-        for item in balances:
-            coinlist.append(item['currency'])        
+        for item in balances:            
+            if item['currency'] != 'KRW':
+                coinlist.append(item['currency'])            
         return coinlist
     
     for b in balances:
@@ -133,6 +134,31 @@ def get_coin_info(ticker):
             if balances.loc[i, '코인'] == ticker:
                 return round(balances.loc[i, '수익율'],1)
     
+def get_RSI(ticker, period = 14, column = 'close'):
+    df = pyupbit.get_ohlcv(ticker, interval="minute30", count=100)
+    df = pd.DataFrame(df)
+    df.to_csv("rsi.csv")
+    
+    delta = df[column].diff(1)    
+    delta = delta.dropna()   
+
+    gain = delta.copy()    
+    loss = delta.copy()
+    gain[gain < 0] = 0    
+    loss[loss > 0] = 0
+    
+    df['gain'] = gain
+    df['loss'] = loss
+    
+    gainmean = gain.ewm(com=13, adjust=False).mean()
+    lossmean = loss.abs().ewm(com=13, adjust=False).mean()
+    RS = gainmean / lossmean
+
+    RSI = 100.0 - (100.0 / (1.0 + RS))    
+    
+    df['RSI'] = RSI
+    
+    return df['RSI']
 
 # 로그인
 upbit = pyupbit.Upbit(access, secret)
@@ -141,10 +167,10 @@ print("autotrade start")
 
 dbgout("\nUpbit autotrade start")
 #coins=get_balance("ALL")
-#print(coins.dtype)
-#coins.remove('KRW')
-coins = ['STRK']
+coins = ['DOGE','FLOW','MLK','HBAR','NU','CVC','AERGO','STRK']
+
 bought_list = []
+RSI_list = []
 
 while True:
     try:
@@ -153,13 +179,24 @@ while True:
         end_time = start_time + datetime.timedelta(days=1)        
         
         for coin in coins:
-            if start_time < now < end_time - datetime.timedelta(seconds=10):    # 오늘 09:00 < 현재 < 익일 08:59:50                            
-                target_price = get_target_price("KRW-" +  str(coin), 0.2)
+            if start_time < now < end_time - datetime.timedelta(seconds=60):    # 오늘 09:00 < 현재 < 익일 08:59:50                            
+                target_price = get_target_price("KRW-" +  coin, 0.2)
                 current_price = get_current_price("KRW-" + coin)
                 ma15 = get_ma15("KRW-" + coin)                
-                
+                min10_MA20 = get_ma10min("KRW-" + coin, 20)
+                min10_MA60 = get_ma10min("KRW-" + coin, 60)
+                rsi = get_RSI("KRW-" + coin, period = 14)               
+                min30rsi = rsi.iloc[-1]
+                if min30rsi <= 30:
+                    RSI_list.append(coin)
                 if target_price < current_price and ma15 < current_price:
-                    krw = get_balance("KRW")                    
+                    krw = get_balance("KRW")
+                    if krw > 5000 and coin not in bought_list:                  # 해당 종목을 구매했으면 재구매하지않는다.
+                        buy_result = upbit.buy_market_order("KRW-" + coin, 10000)                        
+                        bought_list.append(coin)
+                        dbgout(coin + " buy")
+                elif min10_MA20 > min10_MA60 and coin in RSI_list:          # 골든크로스 20이평선이 60이평선을 뚫는 조건을 만족하고 30분봉 RSI 값이 30 밑으로 떨어질때
+                    krw = get_balance("KRW")
                     if krw > 5000 and coin not in bought_list:                  # 해당 종목을 구매했으면 재구매하지않는다.
                         buy_result = upbit.buy_market_order("KRW-" + coin, 10000)                        
                         bought_list.append(coin)
