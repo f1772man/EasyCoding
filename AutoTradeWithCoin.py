@@ -226,7 +226,7 @@ buycoins = ['STRK']
 labels = ['currency', 'balance']
 trading_note = {}
 bought_list = []
-#bought_list.extend(coins)
+bought_list.extend(coins)
 RSI_list = []
 transaction = pd.DataFrame()
 while True:
