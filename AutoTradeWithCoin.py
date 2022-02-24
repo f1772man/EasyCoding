@@ -183,25 +183,29 @@ def sell_coin(ticker):
         if coinbalance > 0.00008:
             sell_result = upbit.sell_market_order("KRW-" + ticker, 0.2)
             
-            trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
-            trading_note['Coin'] = ticker
-            trading_note['Qty'] = coinbalance
-            trading_note['Side'] = "sell"
-            trading_note['Price'] = pyupbit.get_current_price("KRW-" + ticker)
+            if sell_result != None:
+                trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
+                trading_note['Coin'] = ticker
+                trading_note['Qty'] = coinbalance
+                trading_note['Side'] = "sell"
+                trading_note['Price'] = pyupbit.get_current_price("KRW-" + ticker)
 
-            if ticker not in bought_list and coinbalance > 10000 / trading_note['Price']:
-                bought_list.remove(ticker)
+                if ticker not in bought_list and coinbalance > 10000 / trading_note['Price']:
+                    bought_list.remove(ticker)
 
-            dbgout(ticker + " sell : " +str(sell_result['volume']))
+                dbgout(ticker + " sell : " +str(sell_result['volume']))
 
-            df = pd.DataFrame([trading_note])
-            # .to_csv 
-            # 최초 생성 이후 mode는 append
-            if not os.path.exists('Transaction.csv'):
-                df.to_csv('Transaction.csv', index=False, mode='w', encoding='utf-8-sig')
+                df = pd.DataFrame([trading_note])
+                # .to_csv 
+                # 최초 생성 이후 mode는 append
+                if not os.path.exists('Transaction.csv'):
+                    df.to_csv('Transaction.csv', index=False, mode='w', encoding='utf-8-sig')
+                else:
+                    df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
+                return sell_result['executed_volume']
             else:
-                df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
-            return sell_result['executed_volume']
+                dbgout("주문가능한 금액(" + ticker + ")이 부족합니다.")
+                return
         else:
             print("매도 가능한 자산이 없다.")    
 
