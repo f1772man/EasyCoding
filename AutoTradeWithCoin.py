@@ -248,7 +248,7 @@ while True:
                     if krw > 5000 and get_balance(coin) < 0 and coin not in bought_list:
                         buy_coin(coin)
                 # 골든크로스 20이평선이 60이평선을 뚫는 조건을 만족하고 30분봉 RSI 값이 50 밑으로 떨어질때
-                elif min10_MA20 > min10_MA60 and min30rsi <= 40:       #and coin in RSI_list
+                elif min10_MA20 > min10_MA60 or min30rsi <= 40:       #and coin in RSI_list
                     krw = get_balance("KRW")
                     if krw > 5000 and coin not in bought_list:                  
                         buy_coin()
