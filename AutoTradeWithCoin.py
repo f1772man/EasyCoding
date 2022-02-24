@@ -190,7 +190,7 @@ def sell_coin(ticker):
                 trading_note['Side'] = "sell"
                 trading_note['Price'] = pyupbit.get_current_price("KRW-" + ticker)
 
-                if ticker not in bought_list and coinbalance < 10000 / trading_note['Price']:
+                if ticker in bought_list and coinbalance < 10000 / trading_note['Price']:
                     bought_list.remove(ticker)
 
                 dbgout(ticker + " sell : " +str(sell_result['volume']))
