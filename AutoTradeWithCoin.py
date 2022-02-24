@@ -182,16 +182,14 @@ def sell_coin(ticker):
     if coinbalance is not None and ticker in bought_list:
         if coinbalance > 0.00008:
             sell_result = upbit.sell_market_order("KRW-" + ticker, 0.2)
-            
+            if ticker in bought_list and coinbalance < 10000 / trading_note['Price']:
+                bought_list.remove(ticker)            
             if sell_result != None:
                 trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
                 trading_note['Coin'] = ticker
                 trading_note['Qty'] = coinbalance
                 trading_note['Side'] = "sell"
-                trading_note['Price'] = pyupbit.get_current_price("KRW-" + ticker)
-
-                if ticker in bought_list and coinbalance < 10000 / trading_note['Price']:
-                    bought_list.remove(ticker)
+                trading_note['Price'] = pyupbit.get_current_price("KRW-" + ticker)                
 
                 dbgout(ticker + " sell : " +str(sell_result['volume']))
 
