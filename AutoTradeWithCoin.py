@@ -159,29 +159,35 @@ def get_RSI(ticker, period = 14, column = 'close'):
     
     return df['RSI']
 
-def buy_coin(ticker):
-    buy_result = upbit.buy_market_order("KRW-" + ticker, 10000)
-    bought_list.append(ticker)
-    trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
-    trading_note['Coin'] = ticker
-    trading_note['Qty'] = 10000 / pyupbit.get_current_price("KRW-" + ticker)
-    trading_note['Side'] = "buy"
-    trading_note['Price'] = pyupbit.get_current_price("KRW-" + ticker)                        
-    dbgout(ticker + " buy : " +str(buy_result['volume']))
-    df = pd.DataFrame([trading_note])
-    # .to_csv 
-    # 최초 생성 이후 mode는 append
-    if not os.path.exists('Transaction.csv'):
-        df.to_csv('Transaction.csv', index=False, mode='w', encoding='utf-8-sig')
+def buy_coin(ticker, balance):    
+    buy_result = upbit.buy_market_order("KRW-" + ticker, balance*0.995)        #0.9986 예약주문 거래수수료
+    
+    if buy_result != None:
+        trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
+        trading_note['Coin'] = ticker
+        trading_note['Qty'] = 10000 / pyupbit.get_current_price("KRW-" + ticker)
+        trading_note['Side'] = "buy"
+        trading_note['Price'] = pyupbit.get_current_price("KRW-" + ticker)
+        bought_list.append(ticker)
+        dbgout(ticker + " buy : " +str(buy_result['volume']))
+        df = pd.DataFrame([trading_note])
+        # .to_csv 
+        # 최초 생성 이후 mode는 append
+        if not os.path.exists('Transaction.csv'):
+            df.to_csv('Transaction.csv', index=False, mode='w', encoding='utf-8-sig')
+        else:
+            df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
+        return buy_result['executed_volume']
     else:
-        df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
-    return buy_result['executed_volume']
+        dbgout("주문가능한 금액(KRW)이 부족합니다.")
+        return 0
+
 
 def sell_coin(ticker):
     coinbalance = get_balance(coin)
     if coinbalance is not None and ticker in bought_list:
         if coinbalance > 0.00008:
-            sell_result = upbit.sell_market_order("KRW-" + ticker, 0.2)
+            sell_result = upbit.sell_market_order("KRW-" + ticker, coinbalance)
             if ticker in bought_list and coinbalance < 10000 / pyupbit.get_current_price("KRW-" + ticker):
                 bought_list.remove(ticker)            
             if sell_result != None:
@@ -220,7 +226,7 @@ buycoins = ['STRK']
 labels = ['currency', 'balance']
 trading_note = {}
 bought_list = []
-bought_list.extend(coins)
+#bought_list.extend(coins)
 RSI_list = []
 transaction = pd.DataFrame()
 while True:
@@ -236,6 +242,7 @@ while True:
                 current_price = get_current_price("KRW-" + coin)
                 ma15 = get_ma15("KRW-" + coin)                
                 ma30 = get_ma30min("KRW-" + coin)
+                min10_MA5 = get_ma10min("KRW-" + coin, 5)
                 min10_MA20 = get_ma10min("KRW-" + coin, 20)
                 min10_MA60 = get_ma10min("KRW-" + coin, 60)
                 rsi = get_RSI("KRW-" + coin, period = 14)               
@@ -244,15 +251,15 @@ while True:
                     RSI_list.append(coin)
                 if target_price < current_price and ma15 < current_price:
                     krw = get_balance("KRW")
-                    coindict = trading_note.get('Coin')
+                    #coindict = trading_note.get('Coin')
                     if krw > 5000 and get_balance(coin) < 0 and coin not in bought_list:
-                        buy_coin(coin)
+                        buy_coin(coin, krw)
                 # 골든크로스 20이평선이 60이평선을 뚫는 조건을 만족하고 30분봉 RSI 값이 50 밑으로 떨어질때
-                elif min10_MA20 > min10_MA60 or min30rsi <= 40:       #and coin in RSI_list
+                elif min10_MA5 > min10_MA20 or min30rsi <= 40:       #and coin in RSI_list
                     krw = get_balance("KRW")
                     if krw > 5000 and coin not in bought_list:                  
-                        buy_coin()
-                elif min10_MA20 < min10_MA60 or min30rsi >= 85:
+                        buy_coin(coin, krw)
+                elif min10_MA5 < min10_MA20 or min30rsi >= 85:
                     sell_coin(coin)                    
             else:                
                 sell_coin(coin)                
