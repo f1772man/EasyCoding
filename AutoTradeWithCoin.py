@@ -243,6 +243,8 @@ while True:
         end_time = start_time + datetime.timedelta(days=1)        
         
         for coin in buycoins:
+            if coin in bought_list and 0.00008 > get_balance(coin):
+                bought_list.remove(coin)     
             # 오늘 09:00 < 현재 < 익일 08:59:50
             if start_time < now < end_time - datetime.timedelta(seconds=60):
                 target_price = get_target_price("KRW-" + coin, 0.2)
