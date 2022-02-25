@@ -258,7 +258,7 @@ while True:
                 min30rsi = rsi.iloc[-1]
 
                 if coin in bought_list and get_balance(coin) != None:
-                    if 10000 < current_price * get_balance(coin):
+                    if 10000 > current_price * get_balance(coin):
                         bought_list.remove(coin)
 
                 if min30rsi <= 30:
