@@ -176,7 +176,7 @@ def buy_coin(ticker, balance):
         trading_note['Side'] = "buy"
         trading_note['Price'] = pyupbit.get_current_price("KRW-" + ticker)
         bought_list.append(ticker)
-        dbgout(ticker + " buy : " +str(buy_result['volume']))
+        dbgout(ticker + " buy : " +str(buy_result['price']))
         df = pd.DataFrame([trading_note])
         # .to_csv 
         # 최초 생성 이후 mode는 append
@@ -243,8 +243,7 @@ while True:
         end_time = start_time + datetime.timedelta(days=1)        
         
         for coin in buycoins:
-            if coin in bought_list and 0.00008 > get_balance(coin):
-                bought_list.remove(coin)     
+            
             # 오늘 09:00 < 현재 < 익일 08:59:50
             if start_time < now < end_time - datetime.timedelta(seconds=60):
                 target_price = get_target_price("KRW-" + coin, 0.2)
@@ -256,6 +255,11 @@ while True:
                 min10_MA60 = get_ma10min("KRW-" + coin, 60)
                 rsi = get_RSI("KRW-" + coin, period = 14)               
                 min30rsi = rsi.iloc[-1]
+
+                if coin in bought_list and get_balance(coin) != None:
+                    if 10000 < current_price * get_balance(coin):
+                        bought_list.remove(coin)
+
                 if min30rsi <= 30:
                     RSI_list.append(coin)
                 if target_price < current_price and ma15 < current_price:
