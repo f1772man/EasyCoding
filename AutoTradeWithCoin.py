@@ -141,8 +141,7 @@ def get_coin_info(ticker):
 
 def get_RSI(ticker, period = 14, column = 'close'):
     df = pyupbit.get_ohlcv(ticker, interval="minute30", count=100)
-    df = pd.DataFrame(df)
-    df.to_csv("rsi.csv")
+    df = pd.DataFrame(df)    
     
     delta = df[column].diff(1)    
     delta = delta.dropna()   
