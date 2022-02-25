@@ -167,7 +167,8 @@ def get_RSI(ticker, period = 14, column = 'close'):
 
 def buy_coin(ticker, balance):    
     buy_result = upbit.buy_market_order("KRW-" + ticker, balance*0.995)        #0.9986 예약주문 거래수수료
-    
+    if ticker in bought_list and balance < 10000 / pyupbit.get_current_price("KRW-" + ticker):
+                bought_list.remove(ticker)     
     if buy_result != None:
         trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
         trading_note['Coin'] = ticker
@@ -191,7 +192,7 @@ def buy_coin(ticker, balance):
 
 def sell_coin(ticker):
     coinbalance = get_balance(coin)
-    if coinbalance is not None and ticker in bought_list:
+    if coinbalance is not None: # and ticker in bought_list:
         if coinbalance > 0.00008:
             sell_result = upbit.sell_market_order("KRW-" + ticker, coinbalance)
             if ticker in bought_list and coinbalance < 10000 / pyupbit.get_current_price("KRW-" + ticker):
@@ -232,7 +233,7 @@ buycoins = ['STRK']
 labels = ['currency', 'balance']
 trading_note = {}
 bought_list = []
-bought_list.extend(coins)
+#bought_list.extend(coins)
 RSI_list = []
 transaction = pd.DataFrame()
 while True:
@@ -258,12 +259,12 @@ while True:
                 if target_price < current_price and ma15 < current_price:
                     krw = get_balance("KRW")
                     #coindict = trading_note.get('Coin')
-                    if krw > 5000 and get_balance(coin) < 0 and coin not in bought_list:
+                    if krw > 5000 and get_balance(coin) < 0: # and coin not in bought_list:
                         buy_coin(coin, krw)
                 # 골든크로스 20이평선이 60이평선을 뚫는 조건을 만족하고 30분봉 RSI 값이 50 밑으로 떨어질때
                 elif min1_MA5 > min1_MA20 or min30rsi <= 40:       #and coin in RSI_list
                     krw = get_balance("KRW")
-                    if krw > 5000 and coin not in bought_list:                  
+                    if krw > 5000: #and coin not in bought_list:                  
                         buy_coin(coin, krw)
                 elif min1_MA5 < min1_MA20 or min30rsi >= 85:
                     sell_coin(coin)                    
