@@ -240,8 +240,9 @@ while True:
         now = datetime.datetime.now()
         start_time = get_start_time("KRW-DOGE")
         end_time = start_time + datetime.timedelta(days=1)        
-        coins=get_balance("ALL")        
-        bought_list.extend(coins)
+        coins=get_balance("ALL")
+        if coins != bought_list:
+            bought_list.extend(coins)
         
         for coin in buycoins:
             
