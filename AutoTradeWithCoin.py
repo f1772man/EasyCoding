@@ -225,14 +225,14 @@ print("autotrade start")
 # 시작 메세지 슬랙 전송
 
 dbgout("\nUpbit autotrade start")
-coins=get_balance("ALL")
+#coins=get_balance("ALL")
 #buycoins = ['DOGE','FLOW','MLK','HBAR','NU','CVC','AERGO','STRK']
 buycoins = ['STRK']
     
 labels = ['currency', 'balance']
 trading_note = {}
 bought_list = []
-bought_list.extend(coins)
+#bought_list.extend(coins)
 RSI_list = []
 transaction = pd.DataFrame()
 while True:
@@ -240,6 +240,8 @@ while True:
         now = datetime.datetime.now()
         start_time = get_start_time("KRW-DOGE")
         end_time = start_time + datetime.timedelta(days=1)        
+        coins=get_balance("ALL")        
+        bought_list.extend(coins)
         
         for coin in buycoins:
             
