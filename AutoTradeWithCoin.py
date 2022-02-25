@@ -189,35 +189,32 @@ def buy_coin(ticker, balance):
         return 0
 
 
-def sell_coin(ticker):
-    coinbalance = get_balance(coin)
-    if coinbalance is not None and ticker in bought_list:
-        if coinbalance > 0.00008:
-            sell_result = upbit.sell_market_order("KRW-" + ticker, coinbalance)
-            if ticker in bought_list and coinbalance < 10000 / pyupbit.get_current_price("KRW-" + ticker):
-                bought_list.remove(ticker)            
-            if sell_result != None:
-                trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
-                trading_note['Coin'] = ticker
-                trading_note['Qty'] = coinbalance
-                trading_note['Side'] = "sell"
-                trading_note['Price'] = pyupbit.get_current_price("KRW-" + ticker)                
+def sell_coin(ticker, sbalance):
+    
+    sell_result = upbit.sell_market_order("KRW-" + ticker, sbalance)
+    if ticker in bought_list and coinbalance < 10000 / pyupbit.get_current_price("KRW-" + ticker):
+        bought_list.remove(ticker)            
+    if sell_result != None:
+        trading_note['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
+        trading_note['Coin'] = ticker
+        trading_note['Qty'] = sbalance
+        trading_note['Side'] = "sell"
+        trading_note['Price'] = pyupbit.get_current_price("KRW-" + ticker)                
 
-                dbgout(ticker + " sell : " +str(sell_result['volume']))
+        dbgout(ticker + " sell : " +str(sell_result['volume']))
 
-                df = pd.DataFrame([trading_note])
-                # .to_csv 
-                # 최초 생성 이후 mode는 append
-                if not os.path.exists('Transaction.csv'):
-                    df.to_csv('Transaction.csv', index=False, mode='w', encoding='utf-8-sig')
-                else:
-                    df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
-                return sell_result['executed_volume']
-            else:
-                dbgout("주문가능한 금액(" + ticker + ")이 부족합니다.")
-                return
+        df = pd.DataFrame([trading_note])
+        # .to_csv 
+        # 최초 생성 이후 mode는 append
+        if not os.path.exists('Transaction.csv'):
+            df.to_csv('Transaction.csv', index=False, mode='w', encoding='utf-8-sig')
         else:
-            print("매도 가능한 자산이 없다.")    
+            df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
+        return sell_result['executed_volume']
+    else:
+        dbgout("주문가능한 금액(" + ticker + ")이 부족합니다.")
+        return
+         
 
 # 로그인
 upbit = pyupbit.Upbit(access, secret)
@@ -240,12 +237,10 @@ while True:
         now = datetime.datetime.now()
         start_time = get_start_time("KRW-DOGE")
         end_time = start_time + datetime.timedelta(days=1)        
-        coins=get_balance("ALL")
-        if coins != bought_list:
-            bought_list.extend(coins)
+        coins=get_balance("ALL")        
+        bought_list= coins
         
-        for coin in buycoins:
-            
+        for coin in buycoins:            
             # 오늘 09:00 < 현재 < 익일 08:59:50
             if start_time < now < end_time - datetime.timedelta(seconds=60):
                 target_price = get_target_price("KRW-" + coin, 0.2)
@@ -275,9 +270,19 @@ while True:
                     if krw > 5000: # and coin not in bought_list:                  
                         buy_coin(coin, krw)
                 elif min1_MA5 < min1_MA20 or min30rsi >= 85:
-                    sell_coin(coin)                    
-            else:                
-                sell_coin(coin)                
+                    coinbalance = get_balance(coin)
+                    if coinbalance is not None and coin in bought_list:
+                        if coinbalance > 0.00008:
+                            sell_coin(coin, coinbalance)
+                    else:
+                        print("매도 가능한 자산이 없다.")
+            else:
+                coinbalance = get_balance(coin)
+                if coinbalance is not None and ticker in bought_list:
+                    if coinbalance > 0.00008:
+                        sell_coin(coin, coinbalance)
+                else:
+                    print("매도 가능한 자산이 없다.")
             time.sleep(1)
         
         if now.minute % 10 == 0 and 10 <= now.second <= 15:
