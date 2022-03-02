@@ -256,7 +256,7 @@ print("autotrade start")
 
 dbgout("\nUpbit autotrade start")
 
-Favorites = ['KRW-AERGO', 'KRW-CVC', 'KRW-POLY', 'KRW-WAVES', 'KRW-NEAR']
+Favorites = ['KRW-AERGO', 'KRW-CVC', 'KRW-POLY', 'KRW-WAVES', 'KRW-NEAR', 'KRW-NU']
 """ soarList = get_soaredCoin()
 Favorites = Favorites + soarList
 Favorites = list(set(Favorites)) """
