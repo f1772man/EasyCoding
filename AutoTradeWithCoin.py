@@ -208,8 +208,11 @@ def buy_coin(ticker, balance, condition):
 def sell_coin(ticker, sbalance):
     
     sell_result = upbit.sell_market_order(ticker, sbalance)
+
     if ticker in boughtCoins and coinbalance < 10000 / pyupbit.get_current_price(ticker):
-        boughtCoins.remove(ticker)            
+        boughtCoins.remove(ticker)
+        favoriteCoins.remove(ticker)
+        
     if sell_result != None:
         tradingNote['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
         tradingNote['Coin'] = ticker
@@ -260,7 +263,6 @@ favoriteCoins = ['KRW-AERGO', 'KRW-CVC', 'KRW-POLY', 'KRW-WAVES', 'KRW-NEAR', 'K
 
 labels = ['currency', 'balance']
 tradingNote = {}
-
 rsiList = []
 
 while True:
