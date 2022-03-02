@@ -256,10 +256,8 @@ print("autotrade start")
 
 dbgout("\nUpbit autotrade start")
 
-Favorites = ['KRW-AERGO', 'KRW-CVC', 'KRW-POLY', 'KRW-WAVES', 'KRW-NEAR', 'KRW-NU']
-""" soarList = get_soaredCoin()
-Favorites = Favorites + soarList
-Favorites = list(set(Favorites)) """
+favoriteCoins = ['KRW-AERGO', 'KRW-CVC', 'KRW-POLY', 'KRW-WAVES', 'KRW-NEAR', 'KRW-NU']
+
 labels = ['currency', 'balance']
 tradingNote = {}
 
@@ -271,10 +269,30 @@ while True:
     try:
         now = datetime.datetime.now()
         start_time = get_start_time("KRW-DOGE")
-        end_time = start_time + datetime.timedelta(days=1)        
-        boughtCoins=get_balance("ALL")
-        coinList = boughtCoins + Favorites
-        coinList = list(set(coinList))      
+        end_time = start_time + datetime.timedelta(days=1)
+        pre_favoriteCoins = favoriteCoins
+        boughtCoins = get_balance("ALL")
+        favoriteCoins = favoriteCoins +  boughtCoins        
+        favoriteCoins = list(set(favoriteCoins))
+        post_favoriteCoins = favoriteCoins
+
+        favoriteCoins_koreaName = []
+        for i in favoriteCoins:
+            favoriteCoins_koreaName.append(get_koreaName(i) + "(" + i + ")")
+        favoriteCoins_koreaName =sorted(favoriteCoins_koreaName)        
+
+        if len(pre_favoriteCoins) < len(post_favoriteCoins):
+            favorites = "\n>관심종목\n```"
+            addFavorites = list(set(post_favoriteCoins) - set(pre_favoriteCoins))            
+            favorites = favorites + '\n'.join(s for s in favoriteCoins_koreaName) +"```\n"
+            
+            favorites = favorites + ">추가종목\n```"
+            for i in addFavorites:
+                favorites = favorites + get_koreaName(i) + "(" + i + ")" + "\n"
+            favorites = favorites + "```"
+            dbgout(favorites)
+
+        coinList = favoriteCoins
         
         for coin in coinList:
                       
@@ -291,10 +309,7 @@ while True:
                 #ma15 = get_ma15(coin)                
                 #ma30 = get_ma30min(coin)
                 #min1_MA5 = get_ma1min(coin, 5)
-                #min1_MA20 = get_ma1min(coin, 20)
-                min5_MA5 = get_ma5min(coin, 5)
-                min5_MA10 = get_ma5min(coin, 10)
-                min5_MA20 = get_ma5min(coin, 20)
+                #min1_MA20 = get_ma1min(coin, 20)                
                 #min10_MA5 = get_ma10min(coin, 5)
                 rsi = get_RSI(coin)
                 min5rsi = rsi.iloc[-1]
@@ -310,9 +325,10 @@ while True:
 
                 krw, krwLocked = get_balance("KRW")        # 매수 가능 보유자산 조회
                 
-                if krw > 5000 and current_price > target_price: # 최소 구매가능 금액: 5,000원
-                    # 현재 가격이 목표가와 5일 이평선 값보다 클때
-                    if current_price > min5_MA5 and min5_MA5 > min5_MA20:
+                if krw > 5000 and current_price > target_price:     # 최소 구매가능 금액: 5,000원
+                    min5_MA5 = get_ma5min(coin, 5)                    
+                    min5_MA20 = get_ma5min(coin, 20)                    
+                    if current_price > min5_MA5 and min5_MA5 > min5_MA20:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
                         note = "이평선 매수"
                         buy_coin(coin, krw, note)
 
@@ -325,6 +341,9 @@ while True:
                 
                 if coinbalance is not None and coin in boughtCoins:
                         if coinbalance > 5000 / pyupbit.get_current_price(coin):
+                            min5_MA5 = get_ma5min(coin, 5)
+                            min5_MA10 = get_ma5min(coin, 10)
+                            min5_MA20 = get_ma5min(coin, 20)
                             if min5_MA5 < min5_MA20 and current_price < min5_MA5: #or min5rsi >= 85
                                 sell_coin(coin, coinbalance)
 
