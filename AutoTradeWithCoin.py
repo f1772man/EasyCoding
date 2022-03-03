@@ -1,3 +1,4 @@
+from mimetypes import init
 from numpy import dtype
 import schedule
 import pyupbit
@@ -158,7 +159,7 @@ def get_RSI(ticker):
     df = pyupbit.get_ohlcv(ticker, interval="minute5", count=100)
     df = pd.DataFrame(df)    
     
-    delta = df['close'].diff(1)    
+    delta = df['close'].diff(1)        
     delta = delta.dropna()   
 
     gain = delta.copy()    
@@ -181,7 +182,8 @@ def get_RSI(ticker):
 
 def buy_coin(ticker, balance, condition):    
     buy_result = upbit.buy_market_order(ticker, balance*0.995)        #0.9986 예약주문 거래수수료
-    if ticker in boughtCoins and 10000 < get_balance("KRW"):
+    krw, krwLocked = get_balance("KRW")
+    if ticker in boughtCoins and 5000 < krw:
                 boughtCoins.remove(ticker)     
     if buy_result != None:
         tradingNote['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
@@ -209,7 +211,7 @@ def sell_coin(ticker, sbalance):
     
     sell_result = upbit.sell_market_order(ticker, sbalance)
 
-    if ticker in boughtCoins and coinbalance < 10000 / pyupbit.get_current_price(ticker):
+    if ticker in boughtCoins and coinbalance < (5000 / pyupbit.get_current_price(ticker)):
         boughtCoins.remove(ticker)
         favoriteCoins.remove(ticker)
         
@@ -260,7 +262,7 @@ print("autotrade start")
 dbgout("\nUpbit autotrade start")
 
 favoriteCoins = ['KRW-AERGO', 'KRW-CVC', 'KRW-POLY', 'KRW-WAVES', 'KRW-NEAR', 'KRW-NU']
-
+initBoughtCoins = get_balance("ALL")
 labels = ['currency', 'balance']
 tradingNote = {}
 rsiList = []
@@ -272,9 +274,18 @@ while True:
         now = datetime.datetime.now()
         start_time = get_start_time("KRW-DOGE")
         end_time = start_time + datetime.timedelta(days=1)
-        pre_favoriteCoins = favoriteCoins
-        boughtCoins = get_balance("ALL")
-        favoriteCoins = favoriteCoins +  boughtCoins        
+        pre_favoriteCoins = favoriteCoins        
+        
+        boughtCoins = get_balance("ALL")        
+
+        if len(initBoughtCoins) > len(boughtCoins):
+            soldCoins = list(set(initBoughtCoins) - set(boughtCoins))
+            favoriteCoins = list(set(favoriteCoins) - set(soldCoins))
+            favoriteCoins = favoriteCoins + boughtCoins
+        else:
+            favoriteCoins = favoriteCoins + boughtCoins
+
+        initBoughtCoins = boughtCoins
         favoriteCoins = list(set(favoriteCoins))
         post_favoriteCoins = favoriteCoins
 
@@ -313,17 +324,13 @@ while True:
                 #min1_MA5 = get_ma1min(coin, 5)
                 #min1_MA20 = get_ma1min(coin, 20)                
                 #min10_MA5 = get_ma10min(coin, 5)
-                rsi = get_RSI(coin)
-                min5rsi = rsi.iloc[-1]
+                
 
                 coinbalance, coinLocked = get_balance(coin.split('-')[1])
                
                 if coin in boughtCoins and coinbalance != None and coinLocked != None:
                     if 5000 > current_price * coinbalance and 5000 > current_price * coinLocked:
-                        boughtCoins.remove(coin)
-
-                if min5rsi <= 35:
-                    rsiList.append(coin)
+                        boughtCoins.remove(coin)               
 
                 krw, krwLocked = get_balance("KRW")        # 매수 가능 보유자산 조회
                 
@@ -346,10 +353,20 @@ while True:
                             min5_MA5 = get_ma5min(coin, 5)
                             min5_MA10 = get_ma5min(coin, 10)
                             min5_MA20 = get_ma5min(coin, 20)
+                            rsi = get_RSI(coin)
+                            min5rsi = rsi.iloc[-1]
+                            print(coin)
+                            print(boughtCoins)
+                            print("RSI: " + str(min5rsi))
                             if min5_MA5 < min5_MA20 and current_price < min5_MA5: #or min5rsi >= 85
+                                print("RSI: " + str(min5rsi))
+                                print("MA5:" + str(min5_MA5))
                                 sell_coin(coin, coinbalance)
 
                             elif min5_MA5 < min5_MA10 and current_price < min5_MA5:
+                                sell_coin(coin, coinbalance)
+                            
+                            elif min5rsi >=85:
                                 sell_coin(coin, coinbalance)
                 """ else:
                     print(coin + ": 매수하지 않았거나 매도 가능한 자산이 없다.") """
