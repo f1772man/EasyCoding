@@ -180,7 +180,7 @@ def get_RSI(ticker):
     
     return df['RSI']
 
-def buy_coin(ticker, balance, condition):    
+def buy_coin(ticker, balance, messageBuy):    
     buy_result = upbit.buy_market_order(ticker, balance*0.995)        #0.9986 예약주문 거래수수료
     krw, krwLocked = get_balance("KRW")
     if ticker in boughtCoins and 5000 < krw:
@@ -191,7 +191,7 @@ def buy_coin(ticker, balance, condition):
         tradingNote['Qty'] = 10000 / pyupbit.get_current_price(ticker)
         tradingNote['Side'] = "buy"
         tradingNote['Price'] = pyupbit.get_current_price(ticker)
-        tradingNote['note'] = condition
+        tradingNote['Note'] = messageBuy
         boughtCoins.append(ticker)
         dbgout(ticker + " buy : " + str(tradingNote['Price']) + "원에 " + str(buy_result['price']) + "원을 매수하다.")
         df = pd.DataFrame([tradingNote])
@@ -337,9 +337,11 @@ while True:
                 if krw > 5000 and current_price > target_price:     # 최소 구매가능 금액: 5,000원
                     min5_MA5 = get_ma5min(coin, 5)                    
                     min5_MA20 = get_ma5min(coin, 20)                    
-                    if current_price > min5_MA5 and min5_MA5 > min5_MA20:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
-                        note = "이평선 매수"
-                        buy_coin(coin, krw, note)
+                    rsi = get_RSI(coin)
+                    min5rsi = rsi.iloc[-1]
+                    if current_price > min5_MA5 and min5_MA5 > min5_MA20 and min5rsi <= 35:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
+                        messageBuy = "이동평균선 및 RSI - " + "MA5: " + str(min5_MA5) + "MA20: " + str(min5_MA20) + "RSI: " + str(min5rsi)
+                        buy_coin(coin, krw, messageBuy)
 
                     # 골든크로스 20이평선이 60이평선을 뚫는 조건을 만족하고 30분봉 RSI 값이 50 밑으로 떨어질때
                     """ elif min5_MA5 > min5_MA20 and min5rsi <= 35:     #1.0 < abs(round(min5_MA5 / min5_MA20*100-100,1)):#and coin in rsiList
@@ -355,10 +357,8 @@ while True:
                             min5_MA20 = get_ma5min(coin, 20)
                             rsi = get_RSI(coin)
                             min5rsi = rsi.iloc[-1]
-                            print(coin)
-                            print(boughtCoins)
-                            print("RSI: " + str(min5rsi))
-                            if min5_MA5 < min5_MA20 and current_price < min5_MA5: #or min5rsi >= 85
+                            
+                            if min5_MA5 < min5_MA20 and current_price < min5_MA5:
                                 print("RSI: " + str(min5rsi))
                                 print("MA5:" + str(min5_MA5))
                                 sell_coin(coin, coinbalance)
@@ -366,7 +366,7 @@ while True:
                             elif min5_MA5 < min5_MA10 and current_price < min5_MA5:
                                 sell_coin(coin, coinbalance)
                             
-                            elif min5rsi >=85:
+                            elif min5rsi >=75:
                                 sell_coin(coin, coinbalance)
                 """ else:
                     print(coin + ": 매수하지 않았거나 매도 가능한 자산이 없다.") """
