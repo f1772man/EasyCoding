@@ -1,3 +1,4 @@
+from audioop import add
 from mimetypes import init
 from numpy import dtype
 import schedule
@@ -183,8 +184,7 @@ def get_RSI(ticker):
 def buy_coin(ticker, balance, messageBuy):    
     buy_result = upbit.buy_market_order(ticker, balance*0.995)        #0.9986 예약주문 거래수수료
     krw, krwLocked = get_balance("KRW")
-    if ticker in boughtCoins and 5000 < krw:
-                boughtCoins.remove(ticker)     
+       
     if buy_result != None:
         tradingNote['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
         tradingNote['Coin'] = ticker
@@ -193,7 +193,7 @@ def buy_coin(ticker, balance, messageBuy):
         tradingNote['Price'] = pyupbit.get_current_price(ticker)
         tradingNote['Note'] = messageBuy
         boughtCoins.append(ticker)
-        dbgout(ticker + " buy : " + str(tradingNote['Price']) + "원에 " + str(buy_result['price']) + "원을 매수하다.")
+        dbgout("\n```매수체결 " + ticker + " : " + str(tradingNote['Price']) + "원에 " + str(buy_result['price']) + "원을 매수하다.```")
         df = pd.DataFrame([tradingNote])
         # .to_csv 
         # 최초 생성 이후 mode는 append
@@ -203,7 +203,7 @@ def buy_coin(ticker, balance, messageBuy):
             df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
         return buy_result['executed_volume']
     else:
-        dbgout("주문가능한 금액(KRW)이 부족합니다.")
+        dbgout("\n```주문가능한 금액(KRW)이 부족합니다.```")
         return 0
 
 
@@ -222,7 +222,7 @@ def sell_coin(ticker, sbalance):
         tradingNote['Side'] = "sell"
         tradingNote['Price'] = pyupbit.get_current_price(ticker)                
 
-        dbgout(ticker + " sell : " +str(sell_result['volume']))
+        dbgout("\n```매도체결 " + ticker + " : " + str(sell_result['volume']) + "```")
 
         df = pd.DataFrame([tradingNote])
         # .to_csv 
@@ -233,26 +233,26 @@ def sell_coin(ticker, sbalance):
             df.to_csv('Transaction.csv', index=False, mode='a', encoding='utf-8-sig', header=False)
         return sell_result['executed_volume']
     else:
-        dbgout("주문가능한 금액(" + ticker + ")이 부족합니다.")
+        dbgout(ticker + "주문가능한 금액(" + str(sbalance) + ")이 부족합니다.")
         return
          
-def get_soaredCoin():
-    tickerList = pyupbit.get_tickers(fiat="KRW")
+def get_soaredCoin(ticker):
+    #tickerList = pyupbit.get_tickers(fiat="KRW")
 
     maxCoin = {}
     maxSoar = None
     
-    for ticker in tickerList:        
-        df = pyupbit.get_ohlcv(ticker, interval="minute5", count=10)     # to="20220227 09:30:00"
-        df['soar'] = df['close'] / df['open'] *100 -100 
-        soarValue = round(df['soar'].max(),1)
-        maxCoin[ticker] = soarValue
-        time.sleep(0.2)
+    #for ticker in tickerList:        
+    df = pyupbit.get_ohlcv(ticker, interval="minute5", count=5)     # to="20220227 09:30:00"
+    df['soar'] = df['close'] / df['open'] *100 -100 
+    soarValue = round(df['soar'].max(),1)
+    maxCoin[ticker] = soarValue
+    time.sleep(0.2)
     #df = pd.DataFrame(list(maxCoin.items()), columns=['ticker', 'soar'])
     df = pd.DataFrame.from_dict(maxCoin, orient='index').rename(columns={0:'soar'})
     df = df.sort_values('soar', ascending=False)
-    soarList = [item for item in df.head().index]
-    return soarList
+    #soarList = [item for item in df.head().index]
+    return df['soar'].max()   #soarList
 
 # 로그인
 upbit = pyupbit.Upbit(access, secret)
@@ -263,10 +263,30 @@ dbgout("\nUpbit autotrade start")
 
 favoriteCoins = ['KRW-AERGO', 'KRW-CVC', 'KRW-POLY', 'KRW-WAVES', 'KRW-NEAR', 'KRW-NU']
 initBoughtCoins = get_balance("ALL")
+initBoughtCoins = list(set(initBoughtCoins))
+favorites = "\n>보유코인\n```"
+favoriteCoins_koreaName = []
+for i in initBoughtCoins:
+    favoriteCoins_koreaName.append(get_koreaName(i) + "(" + i + ")")
+favoriteCoins_koreaName =sorted(favoriteCoins_koreaName)
+favorites = favorites + '\n'.join(s for s in favoriteCoins_koreaName) +"```\n"
+dbgout(favorites)
+
 labels = ['currency', 'balance']
 tradingNote = {}
 overSold = []
 overBought = []
+addCoins = []
+removeCoins = []
+
+favoriteCoins = list(set(favoriteCoins))
+favorites = "\n>관심코인\n```"
+favoriteCoins_koreaName = []
+for i in favoriteCoins:
+    favoriteCoins_koreaName.append(get_koreaName(i) + "(" + i + ")")
+favoriteCoins_koreaName =sorted(favoriteCoins_koreaName)
+favorites = favorites + '\n'.join(s for s in favoriteCoins_koreaName) +"```\n"
+dbgout(favorites)
 
 while True:
     schedule.run_pending()
@@ -274,41 +294,54 @@ while True:
     try:
         now = datetime.datetime.now()
         start_time = get_start_time("KRW-DOGE")
-        end_time = start_time + datetime.timedelta(days=1)
-        pre_favoriteCoins = favoriteCoins        
+        end_time = start_time + datetime.timedelta(days=1)        
         
         boughtCoins = get_balance("ALL")        
 
         if len(initBoughtCoins) > len(boughtCoins):
-            soldCoins = list(set(initBoughtCoins) - set(boughtCoins))
-            favoriteCoins = list(set(favoriteCoins) - set(soldCoins))
+            removeCoins = list(set(initBoughtCoins) - set(boughtCoins))
+            favoriteCoins = list(set(favoriteCoins) - set(removeCoins))
+            favoriteCoins = favoriteCoins + boughtCoins
+        elif len(initBoughtCoins) < len(boughtCoins):
+            addCoins = list(set(boughtCoins) - set(initBoughtCoins))
             favoriteCoins = favoriteCoins + boughtCoins
         else:
             favoriteCoins = favoriteCoins + boughtCoins
 
         initBoughtCoins = boughtCoins
+        initBoughtCoins = list(set(initBoughtCoins))
         favoriteCoins = list(set(favoriteCoins))
-        post_favoriteCoins = favoriteCoins
-
-        favoriteCoins_koreaName = []
-        for i in favoriteCoins:
-            favoriteCoins_koreaName.append(get_koreaName(i) + "(" + i + ")")
-        favoriteCoins_koreaName =sorted(favoriteCoins_koreaName)        
-
-        if len(pre_favoriteCoins) < len(post_favoriteCoins):
-            favorites = "\n>관심종목\n```"
-            addFavorites = list(set(post_favoriteCoins) - set(pre_favoriteCoins))            
+       
+        if len(addCoins) != 0:
+            favoriteCoins = list(set(favoriteCoins))
+            favorites = "\n>관심코인\n```"
+            favoriteCoins_koreaName = []
+            for i in favoriteCoins:
+                favoriteCoins_koreaName.append(get_koreaName(i) + "(" + i + ")")
+            favoriteCoins_koreaName =sorted(favoriteCoins_koreaName)
             favorites = favorites + '\n'.join(s for s in favoriteCoins_koreaName) +"```\n"
-            
-            favorites = favorites + ">추가종목\n```"
-            for i in addFavorites:
+
+            favorites = favorites + ">매수코인\n```"
+            for i in addCoins:
                 favorites = favorites + get_koreaName(i) + "(" + i + ")" + "\n"
             favorites = favorites + "```"
             dbgout(favorites)
-
-        coinList = favoriteCoins
-        
-        for coin in coinList:
+        elif len(removeCoins) !=0:
+            favoriteCoins = list(set(favoriteCoins))
+            favorites = "\n>관심코인\n```"
+            favoriteCoins_koreaName = []
+            for i in favoriteCoins:
+                favoriteCoins_koreaName.append(get_koreaName(i) + "(" + i + ")")
+            favoriteCoins_koreaName =sorted(favoriteCoins_koreaName)
+            favorites = favorites + '\n'.join(s for s in favoriteCoins_koreaName) +"```\n"
+            favorites = favorites + ">매도코인\n```"
+            for i in removeCoins:
+                favorites = favorites + get_koreaName(i) + "(" + i + ")" + "\n"
+            favorites = favorites + "```"
+            dbgout(favorites)
+        addCoins.clear()
+        removeCoins.clear()
+        for coin in favoriteCoins:
                       
             # 오늘 09:00 < 현재 < 익일 08:59:50
             if start_time < now < end_time - datetime.timedelta(seconds=60):
@@ -318,15 +351,24 @@ while True:
                 current_price = get_current_price(coin)
                 
                 RSI = get_RSI(coin)
-                RSI_5Min = RSI.iloc[-1]
+                RSI_5Min = round(RSI.iloc[-1],1)
 
                 if RSI_5Min < 35:
                     overSold.append(coin)
-                    dbgout(str(coin) + "코인이 과매도 구간으로 매수 타이밍이 되었습니다.")
+                    dbgout("\n```" + str(coin) + "코인이 과매도(" + str(RSI_5Min) + ") 구간으로 매수 타이밍이 되었습니다.```")
                 elif RSI_5Min >= 80:
                     overBought.append(coin)
-                    dbgout(str(coin) + "코인이 과매수 구간으로 매도 타이밍이 되었습니다.")
-                elif 55 <= RSI_5Min < 70 and coin in overSold:
+                    dbgout("\n```" + str(coin) + "코인이 과매수(" + str(RSI_5Min) + ") 구간으로 매도 타이밍이 되었습니다.```")
+                    variance = get_soaredCoin(coin)
+                    if variance > 5.0:
+                        dbgout("\n```" + str(coin) + ": " + str(variance) + "% 상승구간```")
+                elif RSI_5Min >= 75:
+                    overBought.append(coin)
+                    dbgout("\n```" + str(coin) + "코인이 과매수(" + str(RSI_5Min) + ") 구간으로 매도 타이밍이 되었습니다.```")
+                    variance = get_soaredCoin(coin)
+                    if variance > 5.0:
+                        dbgout("\n```" + str(coin) + ": " + str(variance) + "% 상승구간```")
+                elif 55 <= RSI_5Min < 65 and coin in overSold:
                     overSold.remove(coin)
                 elif 40 <= RSI_5Min < 60 and coin in overBought:
                     overBought.remove(coin)
@@ -340,13 +382,17 @@ while True:
                 krw, krwLocked = get_balance("KRW")        # 매수 가능 보유자산 조회
                 
                 if krw > 5000:
-                    min5_MA5 = get_ma5min(coin, 5)                    
-                    min5_MA20 = get_ma5min(coin, 20)                    
-                    rsi = get_RSI(coin)
-                    min5rsi = rsi.iloc[-1]
+                    min5_MA5 = get_ma5min(coin, 5)        
+                    min5_MA10 = get_ma5min(coin, 10)            
+                    min5_MA20 = get_ma5min(coin, 20)
+                    
                     if current_price > target_price:
-                        if current_price > min5_MA5 and min5_MA5 > min5_MA20:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
-                            messageBuy = str(coin) + "이동평균선 및 RSI - " + "MA5: " + str(min5_MA5) + "MA20: " + str(min5_MA20) + "RSI: " + str(min5rsi)
+                        if current_price > min5_MA5 and min5_MA5 > min5_MA20 and min5_MA5 > min5_MA10:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
+                            messageBuy = str(coin) + "이동평균선 - " + "MA5: " + str(min5_MA5) + "MA20: " + str(min5_MA20)
+                            buy_coin(coin, krw, messageBuy)
+
+                        elif min5_MA5 > min5_MA20 and RSI_5Min <= 50:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
+                            messageBuy = str(coin) + "이동평균선 - " + "MA5: " + str(min5_MA5) + "MA20: " + str(min5_MA20)
                             buy_coin(coin, krw, messageBuy)
 
                         elif current_price > min5_MA5 and coin in overSold:
@@ -358,23 +404,24 @@ while True:
                         buy_coin(coin, krw, messageBuy)
                 
                 if coinbalance is not None and coin in boughtCoins:
-                        if coinbalance > 5000 / pyupbit.get_current_price(coin):
-                            min5_MA5 = get_ma5min(coin, 5)
-                            min5_MA10 = get_ma5min(coin, 10)
-                            min5_MA20 = get_ma5min(coin, 20)
-                            rsi = get_RSI(coin)
-                            min5rsi = rsi.iloc[-1]
-                            
-                            if coin in overBought:
+                    currentPrice = pyupbit.get_current_price(coin)
+                    if coinbalance > 5000 / currentPrice:
+                        min5_MA5 = get_ma5min(coin, 5)
+                        min5_MA10 = get_ma5min(coin, 10)
+                        min5_MA20 = get_ma5min(coin, 20)                            
+                        
+                        if coin in overBought:
+                            if RSI_5Min <=75 and coinbalance / 2 > 5000 / currentPrice:
+                                sell_coin(coin, coinbalance/2)
+                            else:
                                 sell_coin(coin, coinbalance)
 
-                            elif min5_MA5 < min5_MA10 and current_price < min5_MA5:
-                                sell_coin(coin, coinbalance/2)
-                            
-                            elif min5_MA5 < min5_MA20 and current_price < min5_MA5:
-                                print("RSI: " + str(min5rsi))
-                                print("MA5:" + str(min5_MA5))
-                                sell_coin(coin, coinbalance)                            
+                        elif min5_MA5 < min5_MA10 and current_price < min5_MA5 and coinbalance /2 > 5000 / currentPrice:
+                            sell_coin(coin, coinbalance/2)
+                        
+                        elif min5_MA5 < min5_MA20 and current_price < min5_MA5:                                
+                            print("MA5:" + str(min5_MA5))
+                            sell_coin(coin, coinbalance)                            
                 
             time.sleep(1)        
     except Exception as e:
