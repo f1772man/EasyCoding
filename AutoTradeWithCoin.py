@@ -265,7 +265,8 @@ favoriteCoins = ['KRW-AERGO', 'KRW-CVC', 'KRW-POLY', 'KRW-WAVES', 'KRW-NEAR', 'K
 initBoughtCoins = get_balance("ALL")
 labels = ['currency', 'balance']
 tradingNote = {}
-rsiList = []
+overSold = []
+overBought = []
 
 while True:
     schedule.run_pending()
@@ -311,20 +312,24 @@ while True:
                       
             # 오늘 09:00 < 현재 < 익일 08:59:50
             if start_time < now < end_time - datetime.timedelta(seconds=60):
-
-                """ if now.minute % 10 == 0 and 0 <= now.second <= 5:
-                    get_coin_info('ALL')            
-                    time.sleep(5)  
- """
+                
                 time.sleep(0.2)
                 target_price = get_target_price(coin, 0.2)
                 current_price = get_current_price(coin)
-                #ma15 = get_ma15(coin)                
-                #ma30 = get_ma30min(coin)
-                #min1_MA5 = get_ma1min(coin, 5)
-                #min1_MA20 = get_ma1min(coin, 20)                
-                #min10_MA5 = get_ma10min(coin, 5)
                 
+                RSI = get_RSI(coin)
+                RSI_5Min = RSI.iloc[-1]
+
+                if RSI_5Min < 35:
+                    overSold.append(coin)
+                    dbgout(str(coin) + "코인이 과매도 구간으로 매수 타이밍이 되었습니다.")
+                elif RSI_5Min >= 80:
+                    overBought.append(coin)
+                    dbgout(str(coin) + "코인이 과매수 구간으로 매도 타이밍이 되었습니다.")
+                elif 55 <= RSI_5Min < 70 and coin in overSold:
+                    overSold.remove(coin)
+                elif 40 <= RSI_5Min < 60 and coin in overBought:
+                    overBought.remove(coin)
 
                 coinbalance, coinLocked = get_balance(coin.split('-')[1])
                
@@ -334,21 +339,23 @@ while True:
 
                 krw, krwLocked = get_balance("KRW")        # 매수 가능 보유자산 조회
                 
-                if krw > 5000 and current_price > target_price:     # 최소 구매가능 금액: 5,000원
+                if krw > 5000:
                     min5_MA5 = get_ma5min(coin, 5)                    
                     min5_MA20 = get_ma5min(coin, 20)                    
                     rsi = get_RSI(coin)
                     min5rsi = rsi.iloc[-1]
-                    if current_price > min5_MA5 and min5_MA5 > min5_MA20 and min5rsi <= 35:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
-                        messageBuy = "이동평균선 및 RSI - " + "MA5: " + str(min5_MA5) + "MA20: " + str(min5_MA20) + "RSI: " + str(min5rsi)
-                        buy_coin(coin, krw, messageBuy)
+                    if current_price > target_price:
+                        if current_price > min5_MA5 and min5_MA5 > min5_MA20:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
+                            messageBuy = str(coin) + "이동평균선 및 RSI - " + "MA5: " + str(min5_MA5) + "MA20: " + str(min5_MA20) + "RSI: " + str(min5rsi)
+                            buy_coin(coin, krw, messageBuy)
 
-                    # 골든크로스 20이평선이 60이평선을 뚫는 조건을 만족하고 30분봉 RSI 값이 50 밑으로 떨어질때
-                    """ elif min5_MA5 > min5_MA20 and min5rsi <= 35:     #1.0 < abs(round(min5_MA5 / min5_MA20*100-100,1)):#and coin in rsiList
-                        note = "RSI 지수가 35보다 적을 때"
-                        buy_coin(coin, krw, note) """
-                """ else:
-                    dbgout("매수 가능한 보유자산이 없습니다.") """
+                        elif current_price > min5_MA5 and coin in overSold:
+                            messageBuy = str(coin) + "RSI 30 보다 작은 과매도 구간이고 현재가 5분봉 5MA보다 클때"
+                            buy_coin(coin, krw, messageBuy)
+
+                    elif coin in overSold:
+                        messageBuy = str(coin) + "RSI 30 보다 적을 때"
+                        buy_coin(coin, krw, messageBuy)
                 
                 if coinbalance is not None and coin in boughtCoins:
                         if coinbalance > 5000 / pyupbit.get_current_price(coin):
@@ -358,18 +365,17 @@ while True:
                             rsi = get_RSI(coin)
                             min5rsi = rsi.iloc[-1]
                             
-                            if min5_MA5 < min5_MA20 and current_price < min5_MA5:
-                                print("RSI: " + str(min5rsi))
-                                print("MA5:" + str(min5_MA5))
+                            if coin in overBought:
                                 sell_coin(coin, coinbalance)
 
                             elif min5_MA5 < min5_MA10 and current_price < min5_MA5:
-                                sell_coin(coin, coinbalance)
+                                sell_coin(coin, coinbalance/2)
                             
-                            elif min5rsi >=75:
-                                sell_coin(coin, coinbalance)
-                """ else:
-                    print(coin + ": 매수하지 않았거나 매도 가능한 자산이 없다.") """
+                            elif min5_MA5 < min5_MA20 and current_price < min5_MA5:
+                                print("RSI: " + str(min5rsi))
+                                print("MA5:" + str(min5_MA5))
+                                sell_coin(coin, coinbalance)                            
+                
             time.sleep(1)        
     except Exception as e:
         print(e)        
