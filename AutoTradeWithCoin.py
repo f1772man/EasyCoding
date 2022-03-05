@@ -301,7 +301,7 @@ while True:
 
         if len(initBoughtCoins) > len(boughtCoins):
             removeCoins = list(set(initBoughtCoins) - set(boughtCoins))
-            favoriteCoins = list(set(favoriteCoins) - set(removeCoins))
+            #favoriteCoins = list(set(favoriteCoins) - set(removeCoins))
             favoriteCoins = favoriteCoins + boughtCoins
         elif len(initBoughtCoins) < len(boughtCoins):
             addCoins = list(set(boughtCoins) - set(initBoughtCoins))
@@ -392,7 +392,7 @@ while True:
                             buy_message = "Buy-1: " + str(coin) + " / " + str(current_price) + " > " + str(min5_MA5) + " and " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(min5_MA5) + " > " + str(min5_MA10)
                             buy_coin(coin, krw, buy_message)
 
-                        elif min5_MA5 > min5_MA20 and RSI_5Min <= 50:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
+                        elif current_price > min5_MA5 and min5_MA5 > min5_MA20 and RSI_5Min <= 60:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
                             buy_message = "Buy-2: " + str(coin) + " / " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(RSI_5Min) + " <= 50 " 
                             buy_coin(coin, krw, buy_message)
 
