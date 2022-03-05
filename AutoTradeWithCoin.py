@@ -369,7 +369,7 @@ while True:
                     variance = get_soaredCoin(coin)
                     if variance > 5.0:
                         dbgout("\n```" + str(coin) + ": " + str(variance) + "% 상승구간```")
-                elif 55 <= RSI_5Min < 65 and coin in overSold:
+                elif 50 <= RSI_5Min < 65 and coin in overSold:
                     overSold.remove(coin)
                 elif 40 <= RSI_5Min < 60 and coin in overBought:
                     overBought.remove(coin)
@@ -389,18 +389,18 @@ while True:
                     
                     if current_price > target_price:
                         if current_price > min5_MA5 and min5_MA5 > min5_MA20 and min5_MA5 > min5_MA10:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
-                            buy_message = "Buy-1: " + str(coin) + str(current_price) + ">" + str(min5_MA5) + "and" + str(min5_MA5) + ">" + str(min5_MA20) + "and" + str(min5_MA5) + ">" + str(min5_MA10)
+                            buy_message = "Buy-1: " + str(coin) + " / " + str(current_price) + " > " + str(min5_MA5) + " and " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(min5_MA5) + " > " + str(min5_MA10)
                             buy_coin(coin, krw, buy_message)
 
                         elif min5_MA5 > min5_MA20 and RSI_5Min <= 50:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
-                            buy_message = "Buy-2: " + str(min5_MA5) + ">" + str(min5_MA20) + "and" + str(RSI_5Min) + "<= 50" 
+                            buy_message = "Buy-2: " + str(coin) + " / " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(RSI_5Min) + " <= 50 " 
                             buy_coin(coin, krw, buy_message)
 
                         elif current_price > min5_MA5 and coin in overSold:
                             buy_message = "Buy-3: " + str(current_price) + ">" + str(min5_MA5) + "coin in overSold"
                             buy_coin(coin, krw, buy_message)
 
-                    elif coin in overSold:
+                    elif coin in overSold and min5_MA5 > min5_MA20:
                         buy_message = "Buy-4: " + "coin in overSold"
                         buy_coin(coin, krw, buy_message)
                 
