@@ -65,8 +65,15 @@ def get_ma15(ticker):
 def get_ma30min(ticker):
     """30분봉 20이동 평균선 조회"""
     df = pyupbit.get_ohlcv(ticker, interval="minute30", count=20, period=0.2)    
-    ma30min = df['close'].rolling(20).mean().iloc[-1]    
-    return ma30min
+    close_ma30 = df['close'].iloc[-1]
+    ma30min = df['close'].rolling(20).mean().iloc[-1]
+    if get_current_price(ticker) >= 100.0:
+        return round(ma30min,0), close_ma30
+    elif 10.0 <= get_current_price(ticker) < 100.0:
+        return round(ma30min,1), close_ma30
+    else:
+        return round(ma30min,2), close_ma30
+    
 
 def get_ma10min(ticker,window):
     """10분봉 20이동 평균선 조회"""
@@ -163,7 +170,7 @@ def get_coin_info():
 schedule.every(10).minutes.do(get_coin_info)
 
 def get_RSI(ticker):
-    df = pyupbit.get_ohlcv(ticker, interval="minute5", count=100)
+    df = pyupbit.get_ohlcv(ticker, interval="minute30", count=100)
     df = pd.DataFrame(df)    
     
     delta = df['close'].diff(1)        
@@ -262,14 +269,14 @@ def get_soaredCoin(ticker):
     return df['soar'].max()   #soarList
 
 def get_bollinger_band(ticker):
-    df = pyupbit.get_ohlcv(ticker, interval="minute5", count=100, period=0.2)
+    df = pyupbit.get_ohlcv(ticker, interval="minute30", count=30, period=0.2)
     ma20 = df['close'].rolling(window=20).mean()
     bol_upper = ma20 + 2 * df['close'].rolling(window=20).std()
     bol_down = ma20 - 2 * df['close'].rolling(window=20).std()
     df['ma20'] = ma20
     df['upper'] = bol_upper
     df['down'] = bol_down
-    return df
+    return df['upper'].iloc[-1], df['lower'].iloc[-1]
 
 # 로그인
 upbit = pyupbit.Upbit(access, secret)
@@ -368,26 +375,26 @@ while True:
                 current_price = get_current_price(coin)
                 
                 RSI = get_RSI(coin)
-                RSI_5Min = round(RSI.iloc[-1],1)
+                RSI_30min = round(RSI.iloc[-1],1)
 
-                if RSI_5Min < 30:
+                if RSI_30min < 30:
                     overSold.append(coin)
-                    dbgout("\n```" + str(coin) + "코인이 과매도(" + str(RSI_5Min) + ") 구간으로 매수 타이밍이 되었습니다.```")
-                elif RSI_5Min >= 80:
+                    dbgout("\n```" + str(coin) + "코인이 과매도(" + str(RSI_30min) + ") 구간으로 매수 타이밍이 되었습니다.```")
+                elif RSI_30min >= 75:
                     overBought.append(coin)
-                    dbgout("\n```" + str(coin) + "코인이 과매수(" + str(RSI_5Min) + ") 구간으로 매도 타이밍이 되었습니다.```")
+                    dbgout("\n```" + str(coin) + "코인이 과매수(" + str(RSI_30min) + ") 구간으로 매도 타이밍이 되었습니다.```")
                     variance = get_soaredCoin(coin)
                     if variance > 5.0:
                         dbgout("\n```" + str(coin) + ": " + str(variance) + "% 상승구간```")
-                elif RSI_5Min >= 75:
+                elif RSI_30min >= 70:
                     overBought.append(coin)
-                    dbgout("\n```" + str(coin) + "코인이 과매수(" + str(RSI_5Min) + ") 구간으로 매도 타이밍이 되었습니다.```")
+                    dbgout("\n```" + str(coin) + "코인이 과매수(" + str(RSI_30min) + ") 구간으로 매도 타이밍이 되었습니다.```")
                     variance = get_soaredCoin(coin)
                     if variance > 5.0:
                         dbgout("\n```" + str(coin) + ": " + str(variance) + "% 상승구간```")
-                elif 55 < RSI_5Min < 65 and coin in overSold:
+                elif 55 < RSI_30min < 65 and coin in overSold:
                     overSold.remove(coin)
-                elif 40 <= RSI_5Min < 60 and coin in overBought:
+                elif 35 <= RSI_30min < 65 and coin in overBought:
                     overBought.remove(coin)
 
                 coinbalance, coinLocked = get_balance(coin.split('-')[1])
@@ -399,17 +406,22 @@ while True:
                 krw, krwLocked = get_balance("KRW")        # 매수 가능 보유자산 조회
                 
                 if krw > 5000:                    
-                    min5_MA5, close_min5 = get_ma5min(coin, 5)        
-                    min5_MA10, close_min5 = get_ma5min(coin, 10)            
-                    min5_MA20, close_min5 = get_ma5min(coin, 20)
+                    min30_MA5, close_min30 = get_ma30min(coin, 5)        
+                    min30_MA10, close_min30 = get_ma30min(coin, 10)            
+                    #min5_MA20, close_min5 = get_ma5min(coin, 20)
                     
                     if current_price > target_price:
-                        if close_min5 > min5_MA5 and min5_MA5 > min5_MA20 and min5_MA5 > min5_MA10 and coin in overSold:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
-                            buy_message = "Buy-1: " + str(coin) + " / " + str(current_price) + " > " + str(min5_MA5) + " and " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(min5_MA5) + " > " + str(min5_MA10)
+                        if current_price > min30_MA5 and min30_MA5 > min30_MA10 and coin in overSold:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
+                            buy_message = "Buy-1: " + str(coin) + " / " + str(current_price) + " > " + str(min30_MA5) + " and " + str(min30_MA5) + " > " + str(min30_MA10) + "and" + str(coin) + "in" + str(overSold)
                             buy_coin(coin, krw, buy_message)
 
-                        """ elif current_price > min5_MA5 and min5_MA5 > min5_MA20 and RSI_5Min <= 45:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
-                            buy_message = "Buy-2: " + str(coin) + " / " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(RSI_5Min) + " <= 60 " 
+                        elif current_price > min30_MA5 and min30_MA5 > min30_MA10:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
+                            buy_message = "Buy-2: " + str(coin) + " / " + str(current_price) + " > " + str(min30_MA5) + " and " + str(min30_MA5) + " > " + str(min30_MA10)
+                            buy_coin(coin, krw, buy_message)
+
+
+                        """ elif current_price > min5_MA5 and min5_MA5 > min5_MA20 and RSI_30min <= 45:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
+                            buy_message = "Buy-2: " + str(coin) + " / " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(RSI_30min) + " <= 60 " 
                             buy_coin(coin, krw, buy_message)
 
                         elif current_price > min5_MA5 and coin in overSold:
@@ -420,32 +432,35 @@ while True:
                             buy_message = "Buy-4: " + str(coin) + " / " + str(current_price) + " > " + str(min5_MA5) + " and " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(min5_MA5) + " > " + str(min5_MA10)
                             buy_coin(coin, krw, buy_message) """
 
-                    elif coin in overSold and min5_MA5 > min5_MA20:
+                    """ elif coin in overSold and min30_MA5 > min30_MA10:
                         buy_message = "Buy-4: " + "coin in overSold"
-                        buy_coin(coin, krw, buy_message)
+                        buy_coin(coin, krw, buy_message) """
                 
                 if coinbalance is not None and coin in boughtCoins:
                     currentPrice = pyupbit.get_current_price(coin)
                     if coinbalance > 5000 / currentPrice:
-                        min5_MA5 = get_ma5min(coin, 5)
-                        min5_MA10 = get_ma5min(coin, 10)
-                        min5_MA20 = get_ma5min(coin, 20)                            
+                        min30_MA5, close_min30 = get_ma30min(coin, 5)
+                        min30_MA10, close_min30 = get_ma30min(coin, 10)
+                        #min5_MA20, close_min5 = get_ma5min(coin, 20)                            
+                        bol_upper, bol_down = get_bollinger_band(coin)
                         
                         if coin in overBought:
-                            if RSI_5Min >= 73 and (coinbalance / 2) > (5000 / currentPrice):
-                                sell_message = "Sell-1: " + str(RSI_5Min) + " >= 75 and" + str(coinbalance) + " / 2 > 5000 / " + str(currentPrice)
+                            if RSI_30min >= 70 and (coinbalance / 2) > (5000 / currentPrice):
+                                sell_message = "Sell-1: " + str(RSI_30min) + " >= 70 and" + str(coinbalance) + " / 2 > 5000 / " + str(currentPrice)
                                 sell_coin(coin, coinbalance/2, sell_message)
-                            elif RSI_5Min >= 80:
-                                sell_message = "Sell-2: " + str(RSI_5Min) + " >= 80 and" + str(coinbalance) + " / 2 > 5000 / " + str(currentPrice)
+                            elif RSI_30min >= 75:
+                                sell_message = "Sell-2: " + str(RSI_30min) + " >= 75 and" + str(coinbalance) + " / 2 > 5000 / " + str(currentPrice)
                                 sell_coin(coin, coinbalance, sell_message)
 
-                        elif min5_MA5 < min5_MA20 and min5_MA5 < min5_MA10 and current_price < min5_MA5 and coinbalance /2 > 5000 / currentPrice:
-                            sell_message = "Sell-3: " + str(min5_MA5) + "<" + str(min5_MA10) + "and" + str(current_price) + "<" + str(min5_MA5) + "and" + str(coinbalance) + " / 2 > 5000 / " + str(currentPrice)
-                            sell_coin(coin, coinbalance/2, sell_message)
-                        
-                        elif min5_MA5 < min5_MA20 and current_price < min5_MA5:                                
+                        elif min30_MA5 < min30_MA10 and current_price < min30_MA5:
+                            sell_message = "Sell-3: " + str(min30_MA5) + "<" + str(min30_MA10) + "and" + str(current_price) + "<" + str(min30_MA5)
+                            sell_coin(coin, coinbalance, sell_message)
+                        if current_price * 1.01 > bol_upper:
+                            sell_message = "Sell-4: " + str(current_price) + ">" + str(bol_upper)
+                            sell_coin(coin, coinbalance, sell_message)
+                        """ elif min5_MA5 < min5_MA20 and current_price < min5_MA5:                                
                             sell_message = "Sell-4: " + str(min5_MA5) + "<" + str(min5_MA20) + "and" + str(current_price) + "<" + str(min5_MA5)
-                            sell_coin(coin, coinbalance, sell_message)                            
+                            sell_coin(coin, coinbalance, sell_message) """                            
                 
             time.sleep(1)        
     except Exception as e:
