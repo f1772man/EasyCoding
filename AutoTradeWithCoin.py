@@ -261,6 +261,16 @@ def get_soaredCoin(ticker):
     #soarList = [item for item in df.head().index]
     return df['soar'].max()   #soarList
 
+def get_bollinger_band(ticker):
+    df = pyupbit.get_ohlcv(ticker, interval="minute5", count=100, period=0.2)
+    ma20 = df['close'].rolling(window=20).mean()
+    bol_upper = ma20 + 2 * df['close'].rolling(window=20).std()
+    bol_down = ma20 - 2 * df['close'].rolling(window=20).std()
+    df['ma20'] = ma20
+    df['upper'] = bol_upper
+    df['down'] = bol_down
+    return df
+
 # 로그인
 upbit = pyupbit.Upbit(access, secret)
 print("autotrade start")
@@ -390,7 +400,7 @@ while True:
                 
                 if krw > 5000:                    
                     min5_MA5, close_min5 = get_ma5min(coin, 5)        
-                    min5_MA10m, close_min5 = get_ma5min(coin, 10)            
+                    min5_MA10, close_min5 = get_ma5min(coin, 10)            
                     min5_MA20, close_min5 = get_ma5min(coin, 20)
                     
                     if current_price > target_price:
@@ -422,14 +432,14 @@ while True:
                         min5_MA20 = get_ma5min(coin, 20)                            
                         
                         if coin in overBought:
-                            if RSI_5Min >= 75 and (coinbalance / 2) > (5000 / currentPrice):
+                            if RSI_5Min >= 73 and (coinbalance / 2) > (5000 / currentPrice):
                                 sell_message = "Sell-1: " + str(RSI_5Min) + " >= 75 and" + str(coinbalance) + " / 2 > 5000 / " + str(currentPrice)
                                 sell_coin(coin, coinbalance/2, sell_message)
-                            elif RSI_5Min >= 80 and (coinbalance / 2) > (5000 / currentPrice):
+                            elif RSI_5Min >= 80:
                                 sell_message = "Sell-2: " + str(RSI_5Min) + " >= 80 and" + str(coinbalance) + " / 2 > 5000 / " + str(currentPrice)
                                 sell_coin(coin, coinbalance, sell_message)
 
-                        elif min5_MA5 < min5_MA10 and current_price < min5_MA5 and coinbalance /2 > 5000 / currentPrice:
+                        elif min5_MA5 < min5_MA20 and min5_MA5 < min5_MA10 and current_price < min5_MA5 and coinbalance /2 > 5000 / currentPrice:
                             sell_message = "Sell-3: " + str(min5_MA5) + "<" + str(min5_MA10) + "and" + str(current_price) + "<" + str(min5_MA5) + "and" + str(coinbalance) + " / 2 > 5000 / " + str(currentPrice)
                             sell_coin(coin, coinbalance/2, sell_message)
                         
