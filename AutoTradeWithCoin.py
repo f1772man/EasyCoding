@@ -77,8 +77,13 @@ def get_ma10min(ticker,window):
 def get_ma5min(ticker,window):
     """5분봉 """
     df = pyupbit.get_ohlcv(ticker, interval="minute5", count=window, period=0.2)    
-    ma5min = df['close'].rolling(window=window).mean().iloc[-1]    
-    return round(ma5min,1)
+    ma5min = df['close'].rolling(window=window).mean().iloc[-1]
+    if get_current_price(ticker) >= 100.0:
+        return round(ma5min,0)
+    elif 10.0 <= get_current_price(ticker) < 100.0:
+        return round(ma5min,1)
+    else:
+        return round(ma5min,2)
 
 def get_ma1min(ticker,window):
     """1분봉 """
@@ -382,7 +387,7 @@ while True:
 
                 krw, krwLocked = get_balance("KRW")        # 매수 가능 보유자산 조회
                 
-                if krw > 5000:
+                if krw > 5000:                    
                     min5_MA5 = get_ma5min(coin, 5)        
                     min5_MA10 = get_ma5min(coin, 10)            
                     min5_MA20 = get_ma5min(coin, 20)
