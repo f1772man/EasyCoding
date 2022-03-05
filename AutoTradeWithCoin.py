@@ -77,13 +77,14 @@ def get_ma10min(ticker,window):
 def get_ma5min(ticker,window):
     """5분봉 """
     df = pyupbit.get_ohlcv(ticker, interval="minute5", count=window, period=0.2)    
+    close_ma5 = df['close'].iloc[-1]
     ma5min = df['close'].rolling(window=window).mean().iloc[-1]
     if get_current_price(ticker) >= 100.0:
-        return round(ma5min,0)
+        return round(ma5min,0), close_ma5
     elif 10.0 <= get_current_price(ticker) < 100.0:
-        return round(ma5min,1)
+        return round(ma5min,1), close_ma5
     else:
-        return round(ma5min,2)
+        return round(ma5min,2), close_ma5
 
 def get_ma1min(ticker,window):
     """1분봉 """
@@ -267,7 +268,7 @@ print("autotrade start")
 
 dbgout("\nUpbit autotrade start")
 
-favoriteCoins = ['KRW-AERGO', 'KRW-CVC', 'KRW-POLY', 'KRW-WAVES', 'KRW-NEAR', 'KRW-NU']
+favoriteCoins = ['KRW-AERGO', 'KRW-CVC', 'KRW-POLY', 'KRW-NEAR', 'KRW-NU']
 initBoughtCoins = get_balance("ALL")
 initBoughtCoins = list(set(initBoughtCoins))
 favorites = "\n>보유코인\n```"
@@ -374,7 +375,7 @@ while True:
                     variance = get_soaredCoin(coin)
                     if variance > 5.0:
                         dbgout("\n```" + str(coin) + ": " + str(variance) + "% 상승구간```")
-                elif 50 <= RSI_5Min < 65 and coin in overSold:
+                elif 55 < RSI_5Min < 65 and coin in overSold:
                     overSold.remove(coin)
                 elif 40 <= RSI_5Min < 60 and coin in overBought:
                     overBought.remove(coin)
@@ -388,22 +389,26 @@ while True:
                 krw, krwLocked = get_balance("KRW")        # 매수 가능 보유자산 조회
                 
                 if krw > 5000:                    
-                    min5_MA5 = get_ma5min(coin, 5)        
-                    min5_MA10 = get_ma5min(coin, 10)            
-                    min5_MA20 = get_ma5min(coin, 20)
+                    min5_MA5, close_min5 = get_ma5min(coin, 5)        
+                    min5_MA10m, close_min5 = get_ma5min(coin, 10)            
+                    min5_MA20, close_min5 = get_ma5min(coin, 20)
                     
                     if current_price > target_price:
-                        if current_price > min5_MA5 and min5_MA5 > min5_MA20 and min5_MA5 > min5_MA10:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
+                        if close_min5 > min5_MA5 and min5_MA5 > min5_MA20 and min5_MA5 > min5_MA10 and coin in overSold:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
                             buy_message = "Buy-1: " + str(coin) + " / " + str(current_price) + " > " + str(min5_MA5) + " and " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(min5_MA5) + " > " + str(min5_MA10)
                             buy_coin(coin, krw, buy_message)
 
-                        elif current_price > min5_MA5 and min5_MA5 > min5_MA20 and RSI_5Min <= 60:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
-                            buy_message = "Buy-2: " + str(coin) + " / " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(RSI_5Min) + " <= 50 " 
+                        """ elif current_price > min5_MA5 and min5_MA5 > min5_MA20 and RSI_5Min <= 45:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
+                            buy_message = "Buy-2: " + str(coin) + " / " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(RSI_5Min) + " <= 60 " 
                             buy_coin(coin, krw, buy_message)
 
                         elif current_price > min5_MA5 and coin in overSold:
                             buy_message = "Buy-3: " + str(current_price) + ">" + str(min5_MA5) + "coin in overSold"
                             buy_coin(coin, krw, buy_message)
+                        
+                        elif close_min5 > min5_MA5 and min5_MA5 > min5_MA20 and min5_MA5 > min5_MA10:   # 5분봉 종가가 목표가와 5일 이평선 값보다 클때
+                            buy_message = "Buy-4: " + str(coin) + " / " + str(current_price) + " > " + str(min5_MA5) + " and " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(min5_MA5) + " > " + str(min5_MA10)
+                            buy_coin(coin, krw, buy_message) """
 
                     elif coin in overSold and min5_MA5 > min5_MA20:
                         buy_message = "Buy-4: " + "coin in overSold"
