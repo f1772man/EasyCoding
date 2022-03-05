@@ -354,7 +354,7 @@ while True:
                 RSI = get_RSI(coin)
                 RSI_5Min = round(RSI.iloc[-1],1)
 
-                if RSI_5Min < 35:
+                if RSI_5Min < 30:
                     overSold.append(coin)
                     dbgout("\n```" + str(coin) + "코인이 과매도(" + str(RSI_5Min) + ") 구간으로 매수 타이밍이 되었습니다.```")
                 elif RSI_5Min >= 80:
