@@ -140,9 +140,9 @@ def get_coin_info():
         coin = "KRW-" + balances.loc[i,'currency']
         korname = get_koreaName(coin)
         rates = round(get_current_price(coin) / balances.loc[i,'avg_buy_price']*100-100,1)
-        min10_MA5 = get_ma10min(coin, 5)
-        min10_MA20 = get_ma10min(coin, 20)
-        min10_MA60 = get_ma10min(coin, 60)
+        min30_MA5, close_min30 = get_ma30min(coin, 5)
+        min30_MA20, close_min30 = get_ma30min(coin, 20)
+        min30_MA60, close_min30 = get_ma30min(coin, 60)
         current_price = get_current_price(coin)
         last_price = get_lastday_close(coin)
         lastrate = round((current_price / last_price)*100 - 100, 2)
@@ -153,15 +153,15 @@ def get_coin_info():
 
         mrkdwn_text = mrkdwn_text + "\n" + "```" + korname + "(" + str(balances.loc[i,'currency']) +  ")" + "```" + "\n" + lastrates  +  "\n" + "현재가: " + str(int(current_price)) + "원" + "\n수익율: " + str(rates) + "%\n"
 
-        if min10_MA5 > min10_MA20:
-            mrkdwn_text = mrkdwn_text + "`10분봉 5이평선 단기상승`\n"
+        if min30_MA5 > min30_MA20:
+            mrkdwn_text = mrkdwn_text + "`30분봉 5이평선 단기상승`\n"
         else:
-            mrkdwn_text = mrkdwn_text + "`10분봉 5이평선 단기하강`\n"
+            mrkdwn_text = mrkdwn_text + "`30분봉 5이평선 단기하강`\n"
         
-        if min10_MA5 > min10_MA60:
-            mrkdwn_text = mrkdwn_text + "`10분봉 5이평선 중기상승`\n"
+        if min30_MA5 > min30_MA60:
+            mrkdwn_text = mrkdwn_text + "`30분봉 5이평선 중기상승`\n"
         else:
-            mrkdwn_text = mrkdwn_text + "`10분봉 5이평선 중기하강`\n"
+            mrkdwn_text = mrkdwn_text + "`30분봉 5이평선 중기하강`\n"
 
         time.sleep(1)
     dbgout(mrkdwn_text)
@@ -274,7 +274,7 @@ def get_bollinger_band(ticker):
     df['ma20'] = ma20
     df['upper'] = bol_upper
     df['down'] = bol_down
-    return df['upper'].iloc[-1], df['lower'].iloc[-1]
+    return df['upper'].iloc[-1], df['down'].iloc[-1]
 
 # 로그인
 upbit = pyupbit.Upbit(access, secret)
