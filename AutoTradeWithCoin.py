@@ -1,5 +1,3 @@
-from audioop import add
-from mimetypes import init
 from numpy import dtype
 import schedule
 import pyupbit
@@ -62,9 +60,9 @@ def get_ma15(ticker):
     ma15 = df['close'].rolling(15).mean().iloc[-1]
     return ma15
 
-def get_ma30min(ticker):
+def get_ma30min(ticker, window):
     """30분봉 20이동 평균선 조회"""
-    df = pyupbit.get_ohlcv(ticker, interval="minute30", count=20, period=0.2)    
+    df = pyupbit.get_ohlcv(ticker, interval="minute30", count=window, period=0.2)    
     close_ma30 = df['close'].iloc[-1]
     ma30min = df['close'].rolling(20).mean().iloc[-1]
     if get_current_price(ticker) >= 100.0:
@@ -285,7 +283,7 @@ print("autotrade start")
 
 dbgout("\nUpbit autotrade start")
 
-favoriteCoins = ['KRW-AERGO', 'KRW-CVC', 'KRW-POLY', 'KRW-NEAR', 'KRW-NU']
+favoriteCoins = ['KRW-AERGO', 'KRW-CVC', 'KRW-POLY', 'KRW-NEAR', 'KRW-NU', 'KRW-WAVES']
 initBoughtCoins = get_balance("ALL")
 initBoughtCoins = list(set(initBoughtCoins))
 favorites = "\n>보유코인\n```"
@@ -377,7 +375,7 @@ while True:
                 RSI = get_RSI(coin)
                 RSI_30min = round(RSI.iloc[-1],1)
 
-                if RSI_30min < 30:
+                if RSI_30min < 30 and coin not in overSold:
                     overSold.append(coin)
                     dbgout("\n```" + str(coin) + "코인이 과매도(" + str(RSI_30min) + ") 구간으로 매수 타이밍이 되었습니다.```")
                 elif RSI_30min >= 75:
@@ -455,10 +453,10 @@ while True:
                         elif min30_MA5 < min30_MA10 and current_price < min30_MA5:
                             sell_message = "Sell-3: " + str(min30_MA5) + "<" + str(min30_MA10) + "and" + str(current_price) + "<" + str(min30_MA5)
                             sell_coin(coin, coinbalance, sell_message)
-                        if current_price * 1.01 > bol_upper:
+                        """ if current_price * 1.01 > bol_upper:
                             sell_message = "Sell-4: " + str(current_price) + ">" + str(bol_upper)
                             sell_coin(coin, coinbalance, sell_message)
-                        """ elif min5_MA5 < min5_MA20 and current_price < min5_MA5:                                
+                        elif min5_MA5 < min5_MA20 and current_price < min5_MA5:                                
                             sell_message = "Sell-4: " + str(min5_MA5) + "<" + str(min5_MA20) + "and" + str(current_price) + "<" + str(min5_MA5)
                             sell_coin(coin, coinbalance, sell_message) """                            
                 
