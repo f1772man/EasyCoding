@@ -194,9 +194,10 @@ def get_RSI(ticker):
 
 def buy_coin(ticker, balance, buy_message):    
     buy_result = upbit.buy_market_order(ticker, balance*0.995)        #0.9986 예약주문 거래수수료
-    krw, krwLocked = get_balance("KRW")
+    krw, krwLocked = get_balance("KRW")   
        
     if buy_result != None:
+        bollinger.append(coin)
         tradingNote['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
         tradingNote['Coin'] = ticker
         tradingNote['Qty'] = balance*0.995 / pyupbit.get_current_price(ticker)
@@ -441,8 +442,7 @@ while True:
                         buy_message = "Buy-4: " + "coin in overSold"
                         buy_coin(coin, krw, buy_message) """
 
-                    if close_min30 < bol_down and RSI_30min <= 32:
-                        bollinger.append(coin)
+                    if close_min30 < bol_down and RSI_30min <= 32:                        
                         buy_message = "Bollinger Band Upper"
                         buy_coin(coin, krw, buy_message)
                 
@@ -459,15 +459,15 @@ while True:
                         """ if close_min30 > bol_down and coin in overBought:
                             sell_message = "Bollinger Band Upper and over bought"
                             sell_coin(coin, coin_balance, sell_message) """
-                        """ if coin in overBought:
-                            if RSI_30min >= 70 and (coin_balance / 2) > (5000 / currentPrice):
+                        if coin in overBought:
+                            if RSI_30min >= 75 and (coin_balance / 2) > (5000 / currentPrice):
                                 sell_message = "Sell-1: " + str(RSI_30min) + " >= 70 and" + str(coin_balance) + " / 2 > 5000 / " + str(currentPrice)
                                 sell_coin(coin, coin_balance/2, sell_message)
-                            elif RSI_30min >= 75:
+                            elif RSI_30min >= 80:
                                 sell_message = "Sell-2: " + str(RSI_30min) + " >= 75 and" + str(coin_balance) + " / 2 > 5000 / " + str(currentPrice)
                                 sell_coin(coin, coin_balance, sell_message)
 
-                        elif min30_MA5 < min30_MA10 and current_price < min30_MA5:
+                        """ elif min30_MA5 < min30_MA10 and current_price < min30_MA5:
                             sell_message = "Sell-3: " + str(min30_MA5) + "<" + str(min30_MA10) + "and" + str(current_price) + "<" + str(min30_MA5)
                             sell_coin(coin, coin_balance, sell_message) """
                         """ if current_price * 1.01 > bol_upper:
