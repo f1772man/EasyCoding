@@ -451,8 +451,8 @@ while True:
                         #min5_MA20, close_min5 = get_ma5min(coin, 20)                            
                         bol_upper, bol_down = get_bollinger_band(coin)
                         
-                        if close_min30 > bol_down:
-                            sell_message = "Bollinger Band Upper"
+                        if close_min30 > bol_down and coin in overBought:
+                            sell_message = "Bollinger Band Upper and over bought"
                             sell_coin(coin, coin_balance, sell_message)
                         if coin in overBought:
                             if RSI_30min >= 70 and (coin_balance / 2) > (5000 / currentPrice):
