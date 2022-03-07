@@ -66,11 +66,11 @@ def get_ma30min(ticker, window):
     close_ma30 = df['close'].iloc[-1]
     ma30min = df['close'].rolling(window).mean().iloc[-1]
     if get_current_price(ticker) >= 100.0:
-        return round(ma30min,0), close_ma30
+        return round(ma30min), round(close_ma30)
     elif 10.0 <= get_current_price(ticker) < 100.0:
-        return round(ma30min,1), close_ma30
+        return round(ma30min,1), round(close_ma30, 1)
     else:
-        return round(ma30min,2), close_ma30
+        return round(ma30min,2), round(close_ma30, 2)
     
 
 def get_ma10min(ticker,window):
@@ -85,7 +85,7 @@ def get_ma5min(ticker,window):
     close_ma5 = df['close'].iloc[-1]
     ma5min = df['close'].rolling(window=window).mean().iloc[-1]
     if get_current_price(ticker) >= 100.0:
-        return round(ma5min,0), round(close_ma5, 0)
+        return round(ma5min), round(close_ma5)
     elif 10.0 <= get_current_price(ticker) < 100.0:
         return round(ma5min,1), round(close_ma5, 1)
     else:
@@ -453,7 +453,7 @@ while True:
                         
                         if close_min30 > bol_down:
                             sell_message = "Bollinger Band Upper"
-                            sell_coin(coin, coin_balance, buy_message)
+                            sell_coin(coin, coin_balance, sell_message)
                         if coin in overBought:
                             if RSI_30min >= 70 and (coin_balance / 2) > (5000 / currentPrice):
                                 sell_message = "Sell-1: " + str(RSI_30min) + " >= 70 and" + str(coin_balance) + " / 2 > 5000 / " + str(currentPrice)
