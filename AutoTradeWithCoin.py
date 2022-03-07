@@ -64,7 +64,7 @@ def get_ma30min(ticker, window):
     """30분봉 20이동 평균선 조회"""
     df = pyupbit.get_ohlcv(ticker, interval="minute30", count=window, period=0.2)    
     close_ma30 = df['close'].iloc[-1]
-    ma30min = df['close'].rolling(20).mean().iloc[-1]
+    ma30min = df['close'].rolling(window).mean().iloc[-1]
     if get_current_price(ticker) >= 100.0:
         return round(ma30min,0), close_ma30
     elif 10.0 <= get_current_price(ticker) < 100.0:
@@ -85,11 +85,11 @@ def get_ma5min(ticker,window):
     close_ma5 = df['close'].iloc[-1]
     ma5min = df['close'].rolling(window=window).mean().iloc[-1]
     if get_current_price(ticker) >= 100.0:
-        return round(ma5min,0), close_ma5
+        return round(ma5min,0), round(close_ma5, 0)
     elif 10.0 <= get_current_price(ticker) < 100.0:
-        return round(ma5min,1), close_ma5
+        return round(ma5min,1), round(close_ma5, 1)
     else:
-        return round(ma5min,2), close_ma5
+        return round(ma5min,2), round(close_ma5, 2)
 
 def get_ma1min(ticker,window):
     """1분봉 """
@@ -274,7 +274,12 @@ def get_bollinger_band(ticker):
     df['ma20'] = ma20
     df['upper'] = bol_upper
     df['down'] = bol_down
-    return df['upper'].iloc[-1], df['down'].iloc[-1]
+    if get_current_price(ticker) >= 100.0:
+        return round(df['upper'].iloc[-1], 0), round(df['down'].iloc[-1], 0)
+    elif 10.0 <= get_current_price(ticker) < 100.0:
+        return round(df['upper'].iloc[-1], 1), round(df['down'].iloc[-1], 1)
+    else:
+        return round(df['upper'].iloc[-1], 2), round(df['down'].iloc[-1], 2)
 
 # 로그인
 upbit = pyupbit.Upbit(access, secret)
