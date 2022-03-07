@@ -199,7 +199,7 @@ def buy_coin(ticker, balance, buy_message):
     if buy_result != None:
         tradingNote['Date'] = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
         tradingNote['Coin'] = ticker
-        tradingNote['Qty'] = 10000 / pyupbit.get_current_price(ticker)
+        tradingNote['Qty'] = balance*0.995 / pyupbit.get_current_price(ticker)
         tradingNote['Side'] = "buy"
         tradingNote['Price'] = pyupbit.get_current_price(ticker)
         tradingNote['Note'] = buy_message
@@ -221,7 +221,7 @@ def buy_coin(ticker, balance, buy_message):
 def sell_coin(ticker, sbalance, sell_message):
     
     sell_result = upbit.sell_market_order(ticker, sbalance)
-
+    bollinger.remove(coin)
     if ticker in boughtCoins and coin_balance < (5000 / pyupbit.get_current_price(ticker)):
         boughtCoins.remove(ticker)
         favoriteCoins.remove(ticker)
@@ -305,6 +305,7 @@ overSold = []
 overBought = []
 addCoins = []
 removeCoins = []
+bollinger = []
 
 favoriteCoins = list(set(favoriteCoins))
 favorites = "\n>관심코인\n```"
@@ -440,7 +441,8 @@ while True:
                         buy_message = "Buy-4: " + "coin in overSold"
                         buy_coin(coin, krw, buy_message) """
 
-                    if close_min30 < bol_down:
+                    if close_min30 < bol_down and RSI_30min <= 32:
+                        bollinger.append(coin)
                         buy_message = "Bollinger Band Upper"
                         buy_coin(coin, krw, buy_message)
                 
@@ -471,9 +473,13 @@ while True:
                         """ if current_price * 1.01 > bol_upper:
                             sell_message = "Sell-4: " + str(current_price) + ">" + str(bol_upper)
                             sell_coin(coin, coin_balance, sell_message) """
-                        if min5_MA5 < min5_MA20 and close_min5 < min5_MA20:                                
+                        if min5_MA5 < min5_MA20 and close_min5 < min5_MA20 and coin not in bollinger:
                             sell_message = "Sell-4: " + str(min5_MA5) + "<" + str(min5_MA20) + "and" + str(current_price) + "<" + str(min5_MA5)
-                            sell_coin(coin, coin_balance, sell_message)                            
+                            sell_coin(coin, coin_balance, sell_message)       
+                        elif close_min30 < bol_upper and coin in bollinger:
+                            sell_message = "Sell-5: Bollinger Band Upper"
+                            sell_coin(coin, coin_balance, sell_message)
+                            
                 
             time.sleep(1)        
     except Exception as e:
