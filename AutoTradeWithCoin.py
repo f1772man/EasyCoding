@@ -424,13 +424,13 @@ while True:
                             buy_message = "Buy-1: " + str(coin) + " / " + str(current_price) + " > " + str(min30_MA5) + " and " + str(min30_MA5) + " > " + str(min30_MA10) + "and" + str(coin) + "in" + str(overSold)
                             buy_coin(coin, krw, buy_message)                        
 
-                        elif current_price > min5_MA5 and min5_MA5 > min5_MA10 and min5_MA5 > min5_MA20:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
+                        """ elif current_price > min5_MA5 and min5_MA5 > min5_MA10 and min5_MA5 > min5_MA20:   # 현재 가격이 목표가와 5일 이평선 값보다 클때
                             buy_message = "Buy-2: " + str(coin) + " / " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(RSI_30min) + " <= 60 " 
                             buy_coin(coin, krw, buy_message)                        
                         
                         elif close_min5 > min5_MA5 and min5_MA5 > min5_MA10 and min5_MA5 > min5_MA20:   # 5분봉 종가가 목표가와 5일 이평선 값보다 클때
                             buy_message = "Buy-4: " + str(coin) + " / " + str(current_price) + " > " + str(min5_MA5) + " and " + str(min5_MA5) + " > " + str(min5_MA20) + " and " + str(min5_MA5) + " > " + str(min5_MA10)
-                            buy_coin(coin, krw, buy_message)
+                            buy_coin(coin, krw, buy_message) """
 
                         """ elif current_price > min5_MA5 and coin in overSold:
                             buy_message = "Buy-3: " + str(current_price) + ">" + str(min5_MA5) + "coin in overSold"
