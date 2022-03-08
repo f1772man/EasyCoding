@@ -222,8 +222,9 @@ def buy_coin(ticker, balance, buy_message):
 def sell_coin(ticker, sbalance, sell_message):
     
     sell_result = upbit.sell_market_order(ticker, sbalance)
-    bollinger.remove(coin)
-    if ticker in boughtCoins and coin_balance < (5000 / pyupbit.get_current_price(ticker)):
+    if coin in bollinger and sbalance < (5000 / pyupbit.get_current_price(ticker)):
+        bollinger.remove(coin)
+    if ticker in boughtCoins and sbalance < (5000 / pyupbit.get_current_price(ticker)):
         boughtCoins.remove(ticker)
         favoriteCoins.remove(ticker)
         
