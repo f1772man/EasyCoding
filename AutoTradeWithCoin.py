@@ -269,7 +269,7 @@ def get_soaredCoin(ticker):
     return df['soar'].max()   #soarList
 
 def get_bollinger_band(ticker):
-    df = pyupbit.get_ohlcv(ticker, interval="minute30", count=30, period=0.2)
+    df = pyupbit.get_ohlcv(ticker, interval="minute30", count=50, period=0.2)
     ma20 = df['close'].rolling(window=20).mean()
     bol_upper = ma20 + 2 * df['close'].rolling(window=20).std()
     bol_down = ma20 - 2 * df['close'].rolling(window=20).std()
@@ -277,7 +277,7 @@ def get_bollinger_band(ticker):
     df['upper'] = bol_upper
     df['down'] = bol_down
     if get_current_price(ticker) >= 100.0:
-        return round(df['upper'].iloc[-1], 0), round(df['down'].iloc[-1], 0)
+        return round(df['upper'].iloc[-1]), round(df['down'].iloc[-1])
     elif 10.0 <= get_current_price(ticker) < 100.0:
         return round(df['upper'].iloc[-1], 1), round(df['down'].iloc[-1], 1)
     else:
@@ -454,7 +454,8 @@ while True:
                         min30_MA10, close_min30 = get_ma30min(coin, 10)
                         min5_MA5, close_min5 = get_ma5min(coin, 5)
                         min5_MA10, close_min5 = get_ma5min(coin, 10)
-                        min5_MA20, close_min5 = get_ma5min(coin, 20)                            
+                        min5_MA20, close_min5 = get_ma5min(coin, 20)
+                        time.sleep(0.2)
                         bol_upper, bol_down = get_bollinger_band(coin)
                         
                         """ if close_min30 > bol_down and coin in overBought:
